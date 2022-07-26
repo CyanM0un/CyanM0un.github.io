@@ -4,6 +4,25 @@
   
     
     <entry>
+      <title>Dest0g3 ljcrt</title>
+      <link href="/2022/07/26/Dest0g3-ljcrt/"/>
+      <url>/2022/07/26/Dest0g3-ljcrt/</url>
+      
+        <content type="html"><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>师傅出的题真的很好，学到了什么叫“灵活处理”，以及在学习别人文章的时候要多思考（其实原本想到了能不能用反射的方法修改下值，但是一看见 new 了一个对象就觉得不行了，怎么没想到“修改源码”的方法呢）</p><p>回顾一下上篇文章的内容：</p><p><img src="/Dest0g3-ljcrt.assets/KpeDjIwvfBz61lL.png" alt="image.png"></p><p>为null是因为在该类的writeobject中：</p><p><img src="/Dest0g3-ljcrt.assets/lweZGavDM2JPmyB.png" alt="image.png"></p><p>new 了一个 ReferenceIndirector 的对象，序列化的是该对象 indirectFrom 方法返回的对象：</p><p><img src="/Dest0g3-ljcrt.assets/T6FSiXPlodNy2xg.png" alt="image.png"></p><p><img src="/Dest0g3-ljcrt.assets/kHfEzlIVOARML6q.png" alt="image.png"></p><p>所以之前说只有 var2 可控，但我们是不是忘了什么？</p><p>熟悉 PHP 反序列化的朋友知道序列化的数据其实重要的部分就是“属性值”，在 java 里应该就是师傅所说的修改字节码，我们可以不这么麻烦，完全可以<strong>仅修改 writeobject</strong> 方法就可以了。可以修改 C3P0 源码再重新生成 jar 包自己用（不太优雅，想想以前魔改 yso 也是这样的），然后就是师傅所说的利用 java agent 技术，算一次很好的再次实战，不了解的可以看看之前的文章：<a href="https://blog.csdn.net/WDWAGAAFGAGDADSA/article/details/122270281">https://blog.csdn.net/WDWAGAAFGAGDADSA/article/details/122270281</a></p><h2 id="复现"><a href="#复现" class="headerlink" title="复现"></a>复现</h2><p>可以自己复制下师傅的 payload 生成 jar，也可以就用师傅的 jar 包</p><p>因为本来打算在 buu 上复现，所以稍微改一下 ip 之类的，然后点 project-structure -&gt; artifacts -&gt; add jar -&gt; from moudule</p><p>可以把师傅原来里面的</p><p><img src="/Dest0g3-ljcrt.assets/image-20220719090825872.png" alt="image-20220719090825872"></p><p>提取出来添加到依赖中，再修改一下MANIFEST.MF文件即可</p><p>我就采用preagent的方法了，将方法修改为</p><p><img src="/Dest0g3-ljcrt.assets/image-20220719102255851.png" alt="image-20220719102255851"></p><p><img src="/Dest0g3-ljcrt.assets/image-20220719102330520.png" alt="image-20220719102330520"></p><p>运行时加上参数即可：</p><p><img src="/Dest0g3-ljcrt.assets/image-20220719102353815.png" alt="image-20220719102353815"></p><p>在两种加载代理的方法踩了许多坑：比如为什么静态时添加method方法体时一直报运行时错误；动态加载代理时一直是初始化失败；静态加载的应该是jar包却可以在源代码修改debug？本人不才，解决不了，只有修改源代码这一条路了</p><p>把mchange-commons源代码下载后用IDEA打开，添加三个依赖，编译成jar包，注意java版本，不然可能会有奇奇怪怪的错误，然后把它添加到原项目中</p><p><img src="/Dest0g3-ljcrt.assets/ltETxzrwRHJaCj7.png" alt="image.png"></p><p><img src="/Dest0g3-ljcrt.assets/3FXKYqZQ41Tys6C.png" alt="image.png"></p><p>然后记录一下一些命令</p><p><img src="/Dest0g3-ljcrt.assets/AzndXEjqB2sHKhe.png" alt="image.png"></p><p><img src="/Dest0g3-ljcrt.assets/sGMhupFIlytrOXL.png" alt="image.png"></p><p>虽然最后还是没有复现成功，但学到了很多经验</p><p>打算后来学习一下JNDIExploit这工具的写法，因为复现不成功总是因为搭建恶意RMIServer没有反应（做题已经遇见好几次了）</p><p>还有个点是不论是agent方法还是修改源代码，记得绕过一下ldap字符串的检测</p><h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://firebasky.github.io/2022/06/04/ljctr-wp/">https://firebasky.github.io/2022/06/04/ljctr-wp/</a></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 复现学习 </category>
+          
+      </categories>
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>HFCTF ezchain</title>
       <link href="/2022/07/25/HFCTF-ezchain/"/>
       <url>/2022/07/25/HFCTF-ezchain/</url>

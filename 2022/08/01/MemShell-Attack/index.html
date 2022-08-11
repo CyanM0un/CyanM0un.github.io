@@ -233,8 +233,7 @@
 <p>如果要获得回显的话，要想办法拿到 response，就在 req 里面</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Response</span> <span class="variable">response</span> <span class="operator">=</span> (Response) getField(getField(request, <span class="string">&quot;req&quot;</span>), <span class="string">&quot;response&quot;</span>);</span><br></pre></td></tr></table></figure>
 
-
-
+<p>关于这部分的利用（另一种办法获取header、Executor组件的内存马）还可以参考：<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/11593">https://xz.aliyun.com/t/11593</a></p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzIwMDk1MjMyMg==&amp;mid=2247489382&amp;idx=1&amp;sn=c906fe2ac109867a7794b5ba4cf722a8&amp;chksm=96f4080ba183811d49cc027855e9074fbb0a8f12fd0ec7d10144d87f9fc1faac682788200669&amp;mpshare=1&amp;scene=23&amp;srcid=0801fW0rmphDtTWVD0IiZ7wL&amp;sharer_sharetime=1659317942066&amp;sharer_shareid=ecfe791586696cabca589d0274c23d1d">https://mp.weixin.qq.com/s?__biz=MzIwMDk1MjMyMg==&amp;mid=2247489382&amp;idx=1&amp;sn=c906fe2ac109867a7794b5ba4cf722a8&amp;chksm=96f4080ba183811d49cc027855e9074fbb0a8f12fd0ec7d10144d87f9fc1faac682788200669&amp;mpshare=1&amp;scene=23&amp;srcid=0801fW0rmphDtTWVD0IiZ7wL&amp;sharer_sharetime=1659317942066&amp;sharer_shareid=ecfe791586696cabca589d0274c23d1d</a></p>
 
       </section>

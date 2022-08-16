@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#3367D6"/>
+  <link rel="apple-touch-icon" href="/icons-192.png">
+  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="generator" content="Hexo 6.2.0">
+
+  
+    <meta name="description" content="青山见我应如是">
+  
+
+  
+
+  
+    <meta name="author" content="CyanM0un">
+  
+
+  
+
+  
+
+  <title>Bypass Waf | CyanM0un</title>
+
+  
+
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+
+  
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@1.1.3/index.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlightjs@9.16.2/styles/monokai.css">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+  <div class="root-container">
+    
+<!-- header container -->
+<header class="header-container post">
+  
+    <div class="post-image" style="background-image: url(/images/bw.jpg)"></div>
+  
+
+  <!-- navbar -->
+<nav class="navbar">
+  <div class="navbar-content">
+    <!-- logo -->
+    <div class="navbar-logo">
+      <a href="/">
+        
+          CyanM0un
+        
+      </a>
+    </div>
+    <!-- link -->
+    <div class="navbar-link">
+      <div class="navbar-btn">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <ul class="navbar-list">
+        
+          <li class="navbar-list-item"><a href="/">首页</a></li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+    <div class="header-content">
+      <div class="post-text layout-block">
+        <div class="layout-margin">
+          <h1 class="title-wrap">Bypass Waf</h1>
+          <h2 class="title-sub-wrap">
+            <strong>CyanM0un</strong>
+            <span>发布于</span>
+            <time  class="article-date" datetime="2022-08-15T08:14:42.000Z" itemprop="datePublished">2022-08-15</time>
+          </h2>
+          <ul class="wrap-list dark">
+  
+    <li><a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/">📒 复现学习</a></li>
+  
+</ul>
+          <ul class="wrap-list dark">
+  
+</ul>
+        </div>
+      </div>
+    </div>
+  
+
+  
+  
+  
+</header>
+
+    <!-- 文章 -->
+
+<!-- 文章内容 -->
+<div class="body-container">
+  <article class="content-container layout-block post-container">
+    <div class="article-info">
+      
+      
+      
+      
+      <section class="article-entry markdown-body layout-margin content-padding--large soft-size--large soft-style--box">
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>学习了三篇文章后，感觉这里的绕 waf 偏向于在 filename 这里做文章</p>
+<p><img src="/Bypass-Waf.assets/image-20220816092705129.png" alt="image-20220816092705129"></p>
+<p>通过一系列的变换，使得 waf 先解析这部分时“失败”，但在后端仍能正常处理并完成文件上传的相关操作。</p>
+<h2 id="Trick1"><a href="#Trick1" class="headerlink" title="Trick1"></a>Trick1</h2><h3 id="one"><a href="#one" class="headerlink" title="one"></a>one</h3><p><img src="/Bypass-Waf.assets/image-20220816093053298.png" alt="image-20220816093053298"></p>
+<p>filename 周围其实是空白字符，如<code>%20</code>，<code>%0a</code></p>
+<p><img src="/Bypass-Waf.assets/image-20220816093621519.png" alt="image-20220816093621519"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">getToken:99, ParameterParser (org.apache.commons.fileupload)</span><br><span class="line">parseToken:162, ParameterParser (org.apache.commons.fileupload)</span><br><span class="line">parse:311, ParameterParser (org.apache.commons.fileupload)</span><br><span class="line">parse:279, ParameterParser (org.apache.commons.fileupload)</span><br><span class="line">parse:262, ParameterParser (org.apache.commons.fileupload)</span><br><span class="line">getFieldName:519, FileUploadBase (org.apache.commons.fileupload)</span><br><span class="line">getFieldName:503, FileUploadBase (org.apache.commons.fileupload)</span><br><span class="line">findNextItem:1041, FileUploadBase$FileItemIteratorImpl (org.apache.commons.fileupload)</span><br><span class="line">&lt;init&gt;:1003, FileUploadBase$FileItemIteratorImpl (org.apache.commons.fileupload)</span><br><span class="line">getItemIterator:310, FileUploadBase (org.apache.commons.fileupload)</span><br><span class="line">parseRequest:334, FileUploadBase (org.apache.commons.fileupload)</span><br><span class="line">parseRequest:115, ServletFileUpload (org.apache.commons.fileupload.servlet)</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="two"><a href="#two" class="headerlink" title="two"></a>two</h3><p>在<code>org.apache.commons.fileupload.ParameterParser#parse(char[], int, int, char)</code>，对value进行了<code>MimeUtility.decodeText</code>操作：</p>
+<blockquote>
+<ol>
+<li>要求以<code>=?</code>开头</li>
+<li>之后要求还要有一个<code>?</code>，中间的内容为编码，也就是<code>=?charset?</code></li>
+<li>获取下一个<code>?</code>间的内容，这里与下面的编解码有关，Q代表Quote-print编码，B代表Base64</li>
+<li>之后定位到最后一个<code>?=</code>间内容执行解码</li>
+</ol>
+</blockquote>
+<p><img src="/Bypass-Waf.assets/image-20220816094159033.png" alt="image-20220816094159033"></p>
+<p>另外<code>decodeText</code>还有判断<code>\t</code>，<code>\n</code>，<code>\r</code>，因此还可以这样</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">test</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> UnsupportedEncodingException &#123;</span><br><span class="line">        System.out.println(MimeUtility.decodeText(<span class="string">&quot;=?utf-8?B?dGVzdA==?=&quot;</span>));</span><br><span class="line">        System.out.println(MimeUtility.decodeText(<span class="string">&quot;=?gbk?Q?=31=2e?=&quot;</span>));</span><br><span class="line">        System.out.println(MimeUtility.decodeText(<span class="string">&quot;=?gbk?B?anNw?=&quot;</span>));</span><br><span class="line">        System.out.println(MimeUtility.decodeText(<span class="string">&quot;=?utf-8?B?dGVzdA==?= =?gbk?Q?=31=2e?=\t=?gbk?B?anNw?=&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Bypass-Waf.assets/image-20220816094803144.png" alt="image-20220816094803144"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line">name = <span class="string">&quot;test&quot;</span></span><br><span class="line">encode = name.encode(<span class="string">&quot;utf-8&quot;</span>)</span><br><span class="line">b = base64.b64encode(encode)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;=?utf-8?B?&quot;</span>+b.decode()+<span class="string">&quot;?=&quot;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">res = <span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> encode.decode(<span class="string">&quot;gbk&quot;</span>):</span><br><span class="line">    tmp = <span class="built_in">hex</span>(<span class="built_in">ord</span>(i)).split(<span class="string">&quot;0x&quot;</span>)[<span class="number">1</span>]</span><br><span class="line">    res += <span class="string">f&quot;=<span class="subst">&#123;tmp&#125;</span>&quot;</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;=?gbk?Q?&quot;</span>+res+<span class="string">&quot;?=&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Trick2"><a href="#Trick2" class="headerlink" title="Trick2"></a>Trick2</h2><h3 id="one-1"><a href="#one-1" class="headerlink" title="one"></a>one</h3><p>处理文件上传中<code>org.apache.catalina.manager.HTMLManagerServlet#upload</code>针对获取文件名的利用</p>
+<p>在 RFC 文档中有这么一句话：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Avoid including the &quot;\&quot; character in the quoted-string form of the filename parameter, as escaping is not implemented by some user agents, and &quot;\&quot; can be considered an illegal path character.</span><br></pre></td></tr></table></figure>
+
+<p>幸运的是 tomcat 可以通过函数<code>HttpParser.unquote</code>去进行处理，处理方式如</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title function_">unquote</span><span class="params">(String input)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (input == <span class="literal">null</span> || input.length() &lt; <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> input;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> start;</span><br><span class="line">    <span class="type">int</span> end;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Skip surrounding quotes if there are any</span></span><br><span class="line">    <span class="keyword">if</span> (input.charAt(<span class="number">0</span>) == <span class="string">&#x27;&quot;&#x27;</span>) &#123;</span><br><span class="line">        start = <span class="number">1</span>;</span><br><span class="line">        end = input.length() - <span class="number">1</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        start = <span class="number">0</span>;</span><br><span class="line">        end = input.length();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">StringBuilder</span> <span class="variable">result</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> start ; i &lt; end; i++) &#123;</span><br><span class="line">        <span class="type">char</span> <span class="variable">c</span> <span class="operator">=</span> input.charAt(i);</span><br><span class="line">        <span class="keyword">if</span> (input.charAt(i) == <span class="string">&#x27;\\&#x27;</span>) &#123;</span><br><span class="line">            i++;</span><br><span class="line">            result.append(input.charAt(i));</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            result.append(c);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result.toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因此可以构造如：<code>filename=&quot;&quot;c\y.\w\arM&quot;</code>这样的：</p>
+<p><img src="/Bypass-Waf.assets/image-20220816095618541.png" alt="image-20220816095618541"></p>
+<p><img src="/Bypass-Waf.assets/image-20220816095639219.png" alt="image-20220816095639219"></p>
+<h3 id="two-1"><a href="#two-1" class="headerlink" title="two"></a>two</h3><p><img src="/Bypass-Waf.assets/image-20220816095911324.png" alt="image-20220816095911324"></p>
+<p>跟进后</p>
+<p><img src="/Bypass-Waf.assets/image-20220816095955339.png" alt="image-20220816095955339"></p>
+<p>判断为真调用<code>RFC2231Utility.decodeText</code>，否则就是 Trick1 里的<code>MimeUtility.decodeText</code></p>
+<p><img src="/Bypass-Waf.assets/image-20220816100113129.png" alt="image-20220816100113129"></p>
+<p>其实就是参数名最后一个是否为<code>*</code>，RFC 中如此描述</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Asterisks (&quot;*&quot;) are reused to provide the indicator that language and character set information is present and encoding is being used. A single quote (&quot;&#x27;&quot;) is used to delimit the character set and language information at the beginning of the parameter value. Percent signs (&quot;%&quot;) are used as the encoding flag, which agrees with RFC 2047.</span><br><span class="line">Specifically, an asterisk at the end of a parameter name acts as an indicator that character set and language information may appear at the beginning of the parameter value. A single quote is used to separate the character set, language, and actual value information in the parameter value string, and an percent sign is used to flag octets encoded in hexadecimal. For example:</span><br><span class="line">Content-Type: application/x-stuff;</span><br><span class="line">         title*=us-ascii&#x27;en-us&#x27;This%20is%20%2A%2A%2Afun%2A%2A%2A</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Bypass-Waf.assets/image-20220816100429340.png" alt="image-20220816100429340"></p>
+<blockquote>
+<ol>
+<li>支持编码的解码</li>
+<li>值当中可以进行url编码（fromHex解码）</li>
+<li>@code<charset>‘<language>‘<encoded_value> 中间这位language可以随便写，代码里没有用到这个的处理</li>
+</ol>
+</blockquote>
+<p>列出 java 支持的编码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Locale</span> <span class="variable">locale</span> <span class="operator">=</span> Locale.getDefault();</span><br><span class="line">Map&lt;String, Charset&gt; maps = Charset.availableCharsets();</span><br><span class="line"><span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">sb.append(<span class="string">&quot;&#123;&quot;</span>);</span><br><span class="line"><span class="keyword">for</span> (Map.Entry&lt;String, Charset&gt; entry : maps.entrySet()) &#123;</span><br><span class="line">  <span class="type">String</span> <span class="variable">key</span> <span class="operator">=</span> entry.getKey();</span><br><span class="line">  <span class="type">Charset</span> <span class="variable">value</span> <span class="operator">=</span> entry.getValue();</span><br><span class="line">  sb.append(<span class="string">&quot;\&quot;&quot;</span> + key + <span class="string">&quot;\&quot;,&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line">sb.deleteCharAt(sb.length() - <span class="number">1</span>);</span><br><span class="line">sb.append(<span class="string">&quot;&#125;&quot;</span>);</span><br><span class="line">System.out.println(sb.toString());</span><br></pre></td></tr></table></figure>
+
+<p>最终可以这样</p>
+<p><img src="/Bypass-Waf.assets/image-20220816100904088.png" alt="image-20220816100904088"></p>
+<p>另外在<code>decodeText</code>之后</p>
+<p><img src="/Bypass-Waf.assets/image-20220816101216375.png" alt="image-20220816101216375"></p>
+<p>判断分隔符之后的位置，所以<code>;</code>可以一直加</p>
+<p><img src="/Bypass-Waf.assets/image-20220816101512058.png" alt="image-20220816101512058"></p>
+<p>还可以和 Trick2 中第一部分结合</p>
+<h3 id="three"><a href="#three" class="headerlink" title="three"></a>three</h3><p><img src="/Bypass-Waf.assets/image-20220816102253352.png" alt="image-20220816102253352"></p>
+<p>在获取值的时候<code>paramValue = parseQuotedToken(new char[] &#123;separator &#125;);</code>，其实是按照分隔符<code>;</code>分割，值可以不用<code>&quot;</code>进行包裹</p>
+<p><img src="/Bypass-Waf.assets/image-20220816102352056.png" alt="image-20220816102352056"></p>
+<p><img src="/Bypass-Waf.assets/image-20220816102533314.png" alt="image-20220816102533314"></p>
+<p>关于 Spring 的更大利用面可以参考原文，还是容易理解的</p>
+<h2 id="Trick3"><a href="#Trick3" class="headerlink" title="Trick3"></a>Trick3</h2><blockquote>
+<p>jsp如果带<code>&quot;</code>符号也是可以访问到的</p>
+</blockquote>
+<p><img src="/Bypass-Waf.assets/6.png" alt="img"></p>
+<blockquote>
+<p>首先tomcat的<code>org.apache.catalina.core.ApplicationPart#getSubmittedFileName</code>的场景下，文件上传解析header的过程当中，存在while循环会不断往后读取，最终会将key&#x2F;value以Haspmap的形式保存，那么如果我们写多个那么就会对其覆盖，在这个场景下绕过waf引擎没有设计完善在同时出现两个filename的时候到底取第一个还是第二个还是都处理，这些差异性也可能导致出现一些新的场景</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> String <span class="title function_">extractFilename</span><span class="params">(String contentDisposition, String key)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (contentDisposition == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">startIndex</span> <span class="operator">=</span> contentDisposition.indexOf(key);</span><br><span class="line">        <span class="keyword">if</span> (startIndex == -<span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">filename</span> <span class="operator">=</span> contentDisposition.substring(startIndex + key.length());</span><br><span class="line">            <span class="type">int</span> endIndex;</span><br><span class="line">            <span class="keyword">if</span> (filename.startsWith(<span class="string">&quot;\&quot;&quot;</span>)) &#123;</span><br><span class="line">                endIndex = filename.indexOf(<span class="string">&quot;\&quot;&quot;</span>, <span class="number">1</span>);</span><br><span class="line">                <span class="keyword">if</span> (endIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> filename.substring(<span class="number">1</span>, endIndex);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                endIndex = filename.indexOf(<span class="string">&quot;;&quot;</span>);</span><br><span class="line">                <span class="keyword">if</span> (endIndex != -<span class="number">1</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> filename.substring(<span class="number">0</span>, endIndex);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> filename;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由此产生的：</p>
+<p><img src="/Bypass-Waf.assets/11.png" alt="img"></p>
+<p><img src="/Bypass-Waf.assets/12.png" alt="img"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://y4tacker.github.io/2022/02/25/year/2022/2/Java%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E5%A4%A7%E6%9D%80%E5%99%A8-%E7%BB%95waf(%E9%92%88%E5%AF%B9commons-fileupload%E7%BB%84%E4%BB%B6)/">https://y4tacker.github.io/2022/02/25/year/2022/2/Java%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E5%A4%A7%E6%9D%80%E5%99%A8-%E7%BB%95waf(%E9%92%88%E5%AF%B9commons-fileupload%E7%BB%84%E4%BB%B6)/</a></p>
+<p><a target="_blank" rel="noopener" href="https://y4tacker.github.io/2022/06/19/year/2022/6/%E6%8E%A2%E5%AF%BBTomcat%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%B5%81%E9%87%8F%E5%B1%82%E9%9D%A2%E7%BB%95waf%E6%96%B0%E5%A7%BF%E5%8A%BF/">https://y4tacker.github.io/2022/06/19/year/2022/6/%E6%8E%A2%E5%AF%BBTomcat%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%B5%81%E9%87%8F%E5%B1%82%E9%9D%A2%E7%BB%95waf%E6%96%B0%E5%A7%BF%E5%8A%BF/</a></p>
+<p><a target="_blank" rel="noopener" href="https://y4tacker.github.io/2022/06/21/year/2022/6/%E6%8E%A2%E5%AF%BBJava%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%B5%81%E9%87%8F%E5%B1%82%E9%9D%A2waf%E7%BB%95%E8%BF%87%E5%A7%BF%E5%8A%BF%E7%B3%BB%E5%88%97%E4%BA%8C/">https://y4tacker.github.io/2022/06/21/year/2022/6/%E6%8E%A2%E5%AF%BBJava%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%B5%81%E9%87%8F%E5%B1%82%E9%9D%A2waf%E7%BB%95%E8%BF%87%E5%A7%BF%E5%8A%BF%E7%B3%BB%E5%88%97%E4%BA%8C/</a></p>
+
+      </section>
+
+      
+      
+        <nav class="article-nav">
+          
+          
+            <div class="article-nav-item layout-padding">
+  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
+    
+      <div class="card-cover" background-image-lazy data-img="/images/swr.jpg"></div>
+    
+    <div class="card-text">
+      
+        <a href="/2022/08/12/SpringBoot-WriteFiles-to-RCE/" itemprop="url">
+          <h2 class="card-text--title text-ellipsis">SpringBoot WriteFiles to RCE</h2>
+        </a>
+      
+      <div class="card-text--row">Older</div>
+    </div>
+  </article>
+</div>
+          
+        </nav>
+      
+
+      <section class="page-message-container layout-padding">
+        
+
+
+  
+  
+
+  
+  
+
+
+      </section>
+    </div>
+    <div class="widget-info">
+      <section class="widget-author widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-body">
+    
+      <img src="/images/touxiang.jpg" class="soft-size--round soft-style--box" alt="CyanM0un">
+    
+    
+      <h2>CyanM0un</h2>
+    
+    
+      <p>青山见我应如是</p>
+    
+
+    <div class="count-box">
+      <div class="count-box--item">
+        <svg class="icon icon-article" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M240.51564747 647.74217627h196.07203239c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806V165.10332731c0-33.18142087-30.16492806-60.32985613-60.32985612-60.32985611H245.04038668C225.43318342 104.7734712 210.35071939 119.85593522 210.35071939 139.46313845V617.57724821c0 16.59071043 13.57421762 30.16492806 30.16492808 30.16492806z m663.62841731-452.47392089v482.63884894c0 33.18142087-27.14843525 60.32985613-60.32985612 60.32985613H180.18579134c-33.18142087 0-60.32985613-27.14843525-60.32985612-60.32985613V195.26825538c-49.77213131 0-90.49478418 40.72265287-90.49478417 90.49478417v452.4739209c0 49.77213131 40.72265287 90.49478418 90.49478417 90.49478417h286.56681657c16.59071043 0 30.16492806 13.57421762 30.16492807 30.16492807s13.57421762 30.16492806 30.16492805 30.16492806h90.49478418c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806s13.57421762-30.16492806 30.16492807-30.16492807h286.56681657c49.77213131 0 90.49478418-40.72265287 90.49478417-90.49478417V285.76303955c0-49.77213131-40.72265287-90.49478418-90.49478417-90.49478417zM587.41232014 647.74217627h191.54729318c19.60720323 0 34.68966726-15.08246403 34.68966729-34.68966727V134.93839925c0-16.59071043-13.57421762-30.16492806-30.16492808-30.16492805H617.57724821c-30.16492806 0-60.32985613 27.14843525-60.32985612 60.32985611v452.4739209c0 16.59071043 13.57421762 30.16492806 30.16492805 30.16492806z" fill="currentColor"></path>
+</svg>
+        <span>9</span>
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+        3
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+        0
+      </div>
+    </div>
+  </div>
+</section>
+
+      
+<section class="widget-toc widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-toc" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M134.50666666 767.46666668H460.8c27.73333333 0 50.24000001 22.50666668 50.24000001 50.23999999v50.13333333c0 27.73333333-22.50666668 50.24000001-50.24000001 50.24000001H134.50666666c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.24000001v-50.13333333c0.10666668-27.73333333 22.50666668-50.24000001 50.24000001-50.24000001zM84.37333332 541.65333333h326.18666669c27.73333333 0 50.24000001 22.39999999 50.23999999 50.13333334v50.24000001c0 27.73333333-22.50666668 50.24000001-50.24000002 50.23999999H84.37333332c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.23999999v-50.24000001c0-27.73333333 22.50666668-50.13333334 50.24000001-50.13333334zM134.50666666 315.83999999H460.8c27.73333333 0 50.24000001 22.50666668 50.24000001 50.24000001v50.24000001c0 27.73333333-22.50666668 50.13333334-50.24000001 50.13333333H134.50666666c-27.73333333 0-50.24000001-22.39999999-50.23999999-50.13333333v-50.24000001c0.10666668-27.84000001 22.50666668-50.24000001 50.24000001-50.23999999zM209.81333332 89.91999999h326.18666671c27.73333333 0 50.24000001 22.39999999 50.23999997 50.13333335v50.23999999c0 27.73333333-22.50666668 50.24000001-50.24000001 50.24000001H209.81333332c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.24000001v-50.24000001c0-27.73333333 22.50666668-50.13333334 50.24000001-50.13333333zM692.05333333 623.36l274.66666669 176.00000002c23.36000001 14.93333333 30.08 45.97333334 15.14666666 69.33333332L954.77333334 910.93333333c-14.93333333 23.25333334-45.97333334 30.08-69.33333335 15.14666667l-274.66666666-176c-23.36000001-14.93333333-30.08-45.97333334-15.14666667-69.33333333l27.09333334-42.24000001c14.93333333-23.36000001 46.08000001-30.08 69.33333333-15.14666666z" fill="currentColor"></path>
+</svg>
+    <span>TOC</span>
+  </div>
+  <div class="widget-body">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Trick1"><span class="toc-number">2.</span> <span class="toc-text">Trick1</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#one"><span class="toc-number">2.1.</span> <span class="toc-text">one</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#two"><span class="toc-number">2.2.</span> <span class="toc-text">two</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Trick2"><span class="toc-number">3.</span> <span class="toc-text">Trick2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#one-1"><span class="toc-number">3.1.</span> <span class="toc-text">one</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#two-1"><span class="toc-number">3.2.</span> <span class="toc-text">two</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#three"><span class="toc-number">3.3.</span> <span class="toc-text">three</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Trick3"><span class="toc-number">4.</span> <span class="toc-text">Trick3</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
+  </div>
+</section>
+
+
+      
+<section class="widet-notice widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-notice" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M512 945.02305225v28.15620663a24.27259221 24.27259221 0 0 1-24.27259221 24.27259335H394.0352a48.54518557 48.54518557 0 0 1-41.74885888-23.78714112l-110.68302222-184.47170332a132.04290333 132.04290333 0 0 1-17.47626667-48.54518557h118.4502511a200.97706667 200.97706667 0 0 1 76.21594113 14.56355556l20.38897777 133.49925888a48.54518557 48.54518557 0 0 0 36.40888888 27.67075555l16.01991111 2.91271112a24.27259221 24.27259221 0 0 1 20.38897778 25.72894889zM997.45185223 463.45481443a194.18074112 194.18074112 0 0 1-38.8361489 116.50844445 24.75804445 24.75804445 0 0 1-36.4088889 0l-34.95253333-34.95253333a24.27259221 24.27259221 0 0 1-2.91271111-30.58346667 97.09036999 97.09036999 0 0 0 0-106.79940665 24.27259221 24.27259221 0 0 1 2.91271111-30.58346666l34.95253333-34.95253334a24.75804445 24.75804445 0 0 1 18.93262223-7.28177777 26.2144 26.2144 0 0 1 17.47626667 9.70903665A194.18074112 194.18074112 0 0 1 997.45185223 463.45481443z m-194.18074112-388.36148111v776.72296335a48.54518557 48.54518557 0 0 1-48.54518556 48.54518443h-28.64165888a48.54518557 48.54518557 0 0 1-33.98163001-14.07810332l-145.63555556-143.20829668A291.27111111 291.27111111 0 0 0 342.57730333 657.63555556H172.18370333a145.63555556 145.63555556 0 0 1-145.63555556-145.63555556v-97.09036999a145.63555556 145.63555556 0 0 1 145.63555556-145.63555556h170.3936a291.27111111 291.27111111 0 0 0 206.31703779-85.43952668l145.63555555-143.20829554a48.54518557 48.54518557 0 0 1 33.98162888-14.07810446H754.72592555a48.54518557 48.54518557 0 0 1 48.54518556 48.54518555z" fill="currentColor"></path>
+</svg>
+    <span>NOTICE</span>
+  </div>
+  <div class="widget-body">
+    <p>读书切戒在慌忙，涵泳工夫兴味长</p>
+  </div>
+</section>
+
+
+      <section class="widget-categorys widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+    <span>CATEGORYS</span>
+  </div>
+  <div class="widget-body">
+    <ul class="categorys-list">
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/">
+            复现学习 (9)
+          </a>
+        </li>
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/%E5%86%85%E5%AD%98%E9%A9%AC/">
+            内存马 (2)
+          </a>
+        </li>
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/%E5%AE%89%E5%85%A8%E5%B7%A5%E5%85%B7/">
+            安全工具 (1)
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+</section>
+
+      <section class="widget-tags widget-item  layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+    <span>TAGS</span>
+  </div>
+  <div class="widget-body">
+    <div class="tags-cloud">
+      
+    </div>
+  </div>
+</section>
+    </div>
+  </article>
+</div>
+
+    <!-- footer container -->
+<footer id="footer" class="footer">
+  <div class="footer-container">
+    
+    <div class="social-icons">
+      
+        
+          <a href="https://github.com/CyanM0un" class="soft-size--primary soft-style--box" target="_blank" rel="noopener noreferrer">
+            <svg class="icon icon-github" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M64.6 512c0 195.6 125.4 361.9 300.1 422.9 23.5 5.9 19.9-10.8 19.9-22.2v-77.6c-135.8 15.9-141.3-74-150.5-89-18.5-31.5-61.9-39.5-49-54.5 31-15.9 62.5 4 98.9 58 26.4 39.1 77.9 32.5 104.1 26 5.7-23.5 17.9-44.5 34.7-60.9-140.7-25.2-199.4-111.1-199.4-213.3 0-49.5 16.4-95.1 48.4-131.8-20.4-60.6 1.9-112.4 4.9-120.1 58.2-5.2 118.5 41.6 123.3 45.3 33.1-8.9 70.8-13.7 112.9-13.7 42.4 0 80.3 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.4-43.9 2.9 7.7 24.7 58.3 5.5 118.1 32.5 36.8 49 82.8 49 132.4 0 102.3-59 188.3-200.2 213.2 23.5 23.3 38.1 55.5 38.1 91.1v112.7c0.8 9 0 17.9 15.1 17.9C832.7 877 960.4 709.4 960.4 512.1c0-247.5-200.6-447.9-447.9-447.9C265 64.1 64.6 264.5 64.6 512z"></path>
+</svg>
+          </a>
+        
+      
+    </div>
+     
+    <p>&copy; 2022 <a href="/" target="_blank">CyanM0un</a></p>
+
+    
+
+    <p>Powered by <a href="https://hexo.io" target="_blank" rel="noopener noreferrer">Hexo</a> Theme - <a href="https://github.com/miiiku/flex-block" target="_blank" rel="noopener noreferrer author">flex-block</a></p>
+
+    <p>
+      <a href="javascript:;" id="theme-light">🌞 浅色</a>
+      <a href="javascript:;" id="theme-dark">🌛 深色</a>
+      <a href="javascript:;" id="theme-auto">🤖️ 自动</a>
+    </p>
+  </div>
+</footer>
+  </div>
+
+  <div class="back-to-top-fixed soft-size--round soft-style--box">
+    <svg class="icon icon-back-to-top" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+      <path d="M725.333333 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8l-213.333333-213.333333c-17.066667-17.066667-17.066667-42.666667 0-59.733333s42.666667-17.066667 59.733333 0l213.333333 213.333333c17.066667 17.066667 17.066667 42.666667 0 59.733333C746.666667 422.4 738.133333 426.666667 725.333333 426.666667z"></path>
+      <path d="M298.666667 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8-17.066667-17.066667-17.066667-42.666667 0-59.733333l213.333333-213.333333c17.066667-17.066667 42.666667-17.066667 59.733333 0s17.066667 42.666667 0 59.733333l-213.333333 213.333333C320 422.4 311.466667 426.666667 298.666667 426.666667z"></path>
+      <path d="M512 896c-25.6 0-42.666667-17.066667-42.666667-42.666667L469.333333 170.666667c0-25.6 17.066667-42.666667 42.666667-42.666667s42.666667 17.066667 42.666667 42.666667l0 682.666667C554.666667 878.933333 537.6 896 512 896z"></path>
+    </svg>
+  </div>
+
+  
+  <!-- aplayer -->
+
+
+<!-- dplayer -->
+
+
+
+
+  
+
+
+  
+
+
+  
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+  
+  <!-- 尾部用户自定义相关内容 -->
+</body>
+</html>

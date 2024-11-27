@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="前言发现国内没有数据流完整性（Data-Flow Integrity）保护的相关文章，因此记录下论文学习过程 原文在：https:&#x2F;&#x2F;timharris.uk&#x2F;papers&#x2F;2006-osdi.pdf 背景作者将攻击看作了在程序中滥用预期的数据流，从而写入到非预期的位置  control-data attack：如利用缓冲区溢出漏洞覆盖返回地址、函数指针或可控数据 non-control-data">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【论文笔记】Securing-software-by-enforcing-data-flow-integrity">
+<meta property="og:url" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/index.html">
+<meta property="og:site_name" content="CyanM0un">
+<meta property="og:description" content="前言发现国内没有数据流完整性（Data-Flow Integrity）保护的相关文章，因此记录下论文学习过程 原文在：https:&#x2F;&#x2F;timharris.uk&#x2F;papers&#x2F;2006-osdi.pdf 背景作者将攻击看作了在程序中滥用预期的数据流，从而写入到非预期的位置  control-data attack：如利用缓冲区溢出漏洞覆盖返回地址、函数指针或可控数据 non-control-data">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025154200955.png">
+<meta property="og:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025154819220.png">
+<meta property="og:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025162302079.png">
+<meta property="og:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025162541711.png">
+<meta property="og:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025163520467.png">
+<meta property="og:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025163748527.png">
+<meta property="og:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025164005949.png">
+<meta property="og:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025164028404.png">
+<meta property="article:published_time" content="2024-10-25T09:57:02.000Z">
+<meta property="article:modified_time" content="2024-10-25T10:48:15.517Z">
+<meta property="article:author" content="CyanM0un">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025154200955.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>【论文笔记】Securing-software-by-enforcing-data-flow-integrity</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/CyanM0un">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="Previous post" href="/2024/10/25/%E5%9F%BA%E4%BA%8E%E5%8A%A8%E6%80%81Agent%E6%B3%A8%E5%85%A5%E6%8C%96%E6%8E%98Java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E5%8F%A3/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&text=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&is_video=false&description=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=【论文笔记】Securing-software-by-enforcing-data-flow-integrity&body=Check out this article: http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&name=【论文笔记】Securing-software-by-enforcing-data-flow-integrity&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&t=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">2.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Data-Flow-Integrity-Enforcement"><span class="toc-number">3.</span> <span class="toc-text">Data-Flow Integrity Enforcement</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Static-Analysis"><span class="toc-number">3.1.</span> <span class="toc-text">Static Analysis</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Instrumentation"><span class="toc-number">3.2.</span> <span class="toc-text">Instrumentation</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Optimization"><span class="toc-number">4.</span> <span class="toc-text">Optimization</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%8F%E5%B0%91%E9%87%8D%E5%A4%8D%E7%9A%84identifier"><span class="toc-number">4.1.</span> <span class="toc-text">减少重复的identifier</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A7%BB%E9%99%A4%E5%86%99%E6%93%8D%E4%BD%9C%E7%9A%84%E8%BE%B9%E7%95%8C%E6%A3%80%E6%9F%A5"><span class="toc-number">4.2.</span> <span class="toc-text">移除写操作的边界检查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A7%BB%E9%99%A4%E5%86%97%E4%BD%99%E7%9A%84%E6%8F%92%E6%A1%A9%E6%8C%87%E4%BB%A4"><span class="toc-number">4.3.</span> <span class="toc-text">移除冗余的插桩指令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E5%8C%96%E6%88%90%E5%91%98%E6%A3%80%E6%B5%8B"><span class="toc-number">4.4.</span> <span class="toc-text">优化成员检测</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        【论文笔记】Securing-software-by-enforcing-data-flow-integrity
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">CyanM0un</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-10-25T09:57:02.000Z" class="dt-published" itemprop="datePublished">2024-10-25</time>
+        
+      
+    </div>
+
+
+      
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>发现国内没有数据流完整性（Data-Flow Integrity）保护的相关文章，因此记录下论文学习过程</p>
+<p>原文在：<a target="_blank" rel="noopener" href="https://timharris.uk/papers/2006-osdi.pdf">https://timharris.uk/papers/2006-osdi.pdf</a></p>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>作者将攻击看作了在程序中滥用预期的数据流，从而写入到非预期的位置</p>
+<ul>
+<li>control-data attack：如利用缓冲区溢出漏洞覆盖返回地址、函数指针或可控数据</li>
+<li>non-control-data attack：在不滥用数据流的情况下覆盖安全相关的数据（当时还未在真实世界中发现，不知道现在有没有攻击属于这种分类）</li>
+</ul>
+<p>文中也提到了控制流完整性（control-flow integrity）保护，其也难以防御non-control-data attacks</p>
+<h2 id="Data-Flow-Integrity-Enforcement"><a href="#Data-Flow-Integrity-Enforcement" class="headerlink" title="Data-Flow Integrity Enforcement"></a>Data-Flow Integrity Enforcement</h2><p>data-flow integrity的定义：</p>
+<blockquote>
+<p>whenever a value is read, the definition identifier of the instruction that wrote the value is in the set of reaching definitions for the read (if there is one)</p>
+</blockquote>
+<p>总览：首先利用静态分析得到程序的数据流图，然后对程序进行插桩，从而保证在运行时数据的流动是被数据流图所允许的，否则就直接抛出异常</p>
+<p>我们以这段代码为例来分析文章的技术：</p>
+<p><img src="/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025154200955.png"></p>
+<p>这段代码存在的漏洞可能为在第5行覆盖函数返回地址或变量<code>authenticated</code></p>
+<h3 id="Static-Analysis"><a href="#Static-Analysis" class="headerlink" title="Static Analysis"></a>Static Analysis</h3><p>文章基于Reaching Definition Analysis来生成数据流动图，主要包括两个分析：过程内流敏感分析和过程间流不敏感且上下文不敏感分析</p>
+<p>我们首先看一下上述例子的中间表示，其实就是SSA：</p>
+<p><img src="/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025154819220.png"></p>
+<p>对于代码第4行<code>authenticated</code>的使用，Reaching Definition Analysis会得到结果：第1行以及第8行的定义均可以抵达此处使用，而第11行结果也是如此（当然你也许会疑惑第1行的定义实际上不会到第11行呀，但请回想下Reaching Definition Analysis是may analysis，且从SSA上我们也能看出两者所在的BB存在一个跳转边）。因此，第4行和第11行<code>authenticated</code>的reaching definitions就是<code>&#123;1,8&#125;</code></p>
+<p>而过程间分析则主要根据经典的Andersen指针分析算法计算reading definitions，不考虑上下文、控制流信息以及field-sensitivity，并会将指向集合存储在文件中；其还会采集写入指令目标变量的location和identifier</p>
+<p>那么如何计算过程间的reaching definitions呢？其实就是使用指向信息以及写入指令的相关信息。例如，在使用某个变量时，它的reaching definitions集合就是写入该变量操作的identifiers以及指针解引用可能指向该变量的写入操作的identifiers的union（感觉原文也很绕）</p>
+<h3 id="Instrumentation"><a href="#Instrumentation" class="headerlink" title="Instrumentation"></a>Instrumentation</h3><p>为了计算运行时的reaching definitions，文中提出了运行时定义表（runtime definitions table，RDT），主要记录每个内存位置最后一个写入指令的identifier。因此，在读取某个值时，就可以通过其地址来从RDT中获取相应的identifier。如果其在我们静态得到的reaching definitions集合里，则是没有问题的</p>
+<p>插入的指令格式如下：</p>
+<p><img src="/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025162302079.png"></p>
+<p>第一个就是将RDT的opnd入口设为id，第二个就是从RDT中获得opnd对应的identifier并检查是否在setName对应的reaching definitions集合中，我们来看下原始程序插桩后的代码：</p>
+<p><img src="/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025162541711.png"></p>
+<p>例如最开始的SETDEF设置了变量<code>_authenticated</code>的identifier为1（第一行），而CHECKDEF所用到的100对应的值就是静态计算的<code>&#123;1,8&#125;</code>。文章并不会对分配到寄存器的临时变量插桩，也不会对<code>&amp;packet</code>进行插桩（其返回地址可以通过向frame pointer增加常量计算）</p>
+<p>对于<code>SETDEF _authenticated 1</code>，对应的具体实现为：</p>
+<p><img src="/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025163520467.png"></p>
+<p>第一行指令将目标地址写入到了ecx中，随后三行对地址的边界进行检查，没有问题的话就更新RDT</p>
+<p>对于<code>CHECKDEF _authenticated 100</code>，对应的具体实现为：</p>
+<p><img src="/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025163748527.png"></p>
+<p>因此，如果攻击者通过packet覆盖了<code>authenticated</code>的值（在某个流程中），这里就可以检测得到</p>
+<p>额外的，文中还会对control-data的定义和使用插桩，比如在函数入口会设置RDT中函数的返回地址为0</p>
+<p><img src="/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025164005949.png"></p>
+<p>在函数返回时会进行检查</p>
+<p><img src="/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/image-20241025164028404.png"></p>
+<p>这样也能确保函数地址不会被覆盖</p>
+<p>还有个重要的问题，就是确保攻击者不能篡改RDT、代码以及绕过文章的instrumentation：</p>
+<ul>
+<li>对于RDT篡改，可以检测写入的地址是否在分配到RDT内存区域里，如果是的话就会产生异常（和RDT更新区别开）</li>
+<li>对于代码滥用，则限制代码页只能读取</li>
+<li>对于防止攻击者绕过插桩，需要防止滥用indirect control transfers的返回地址，其实就是上述函数返回地址的检测</li>
+</ul>
+<h2 id="Optimization"><a href="#Optimization" class="headerlink" title="Optimization"></a>Optimization</h2><p>原生的数据流完整性执行会带来很多负担，因此需要一些列的技巧减少负担</p>
+<h3 id="减少重复的identifier"><a href="#减少重复的identifier" class="headerlink" title="减少重复的identifier"></a>减少重复的identifier</h3><p>在相同类中安全的给definitions赋值一样的identifier</p>
+<p>文中定义两个definitions是equivalent如果他们有相同的使用</p>
+<p>比如<code>authenticated </code>两处定义的使用都一样，因此可能简化为一个相同的identifier</p>
+<h3 id="移除写操作的边界检查"><a href="#移除写操作的边界检查" class="headerlink" title="移除写操作的边界检查"></a>移除写操作的边界检查</h3><p>文中定义了一个写操作是安全的如果：</p>
+<blockquote>
+<p>the target address is obtained by adding a small constant offset (possibly zero) to the stack pointer, frame pointer, or to the address of a global or static variable</p>
+</blockquote>
+<p>即不会篡改RDT</p>
+<h3 id="移除冗余的插桩指令"><a href="#移除冗余的插桩指令" class="headerlink" title="移除冗余的插桩指令"></a>移除冗余的插桩指令</h3><p>假设I1和I2是任一插桩指令（SETDEF或CHECKDEF，CHECKDEF在相同数据上操作且执行时不会干预写入）</p>
+<ul>
+<li>如果I1和I2都是SETDEF，且identifier相同，则I2是冗余的</li>
+<li>如果I1和I2都是SETDEF，且没有干预对于数据的CHECKDEF，则I1是冗余的</li>
+<li>如果I1是对于ID1的SETDEF，且I2是对于包含ID2集合的CHECKDEF，则I2是冗余的（移除数据使用非常接近定义的情况）</li>
+<li>如果I1是对于IDS1的CHECKDEF，I2是对于IDS2的CHECKDEF，则可以将IDS2缩小到只包含IDS1的元素（溢出重复使用相同数据上的CHECKDEF）</li>
+<li>…</li>
+</ul>
+<h3 id="优化成员检测"><a href="#优化成员检测" class="headerlink" title="优化成员检测"></a>优化成员检测</h3><p>连续的集合检测效率更高</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="https://github.com/CyanM0un">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">2.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Data-Flow-Integrity-Enforcement"><span class="toc-number">3.</span> <span class="toc-text">Data-Flow Integrity Enforcement</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Static-Analysis"><span class="toc-number">3.1.</span> <span class="toc-text">Static Analysis</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Instrumentation"><span class="toc-number">3.2.</span> <span class="toc-text">Instrumentation</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Optimization"><span class="toc-number">4.</span> <span class="toc-text">Optimization</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%8F%E5%B0%91%E9%87%8D%E5%A4%8D%E7%9A%84identifier"><span class="toc-number">4.1.</span> <span class="toc-text">减少重复的identifier</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A7%BB%E9%99%A4%E5%86%99%E6%93%8D%E4%BD%9C%E7%9A%84%E8%BE%B9%E7%95%8C%E6%A3%80%E6%9F%A5"><span class="toc-number">4.2.</span> <span class="toc-text">移除写操作的边界检查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A7%BB%E9%99%A4%E5%86%97%E4%BD%99%E7%9A%84%E6%8F%92%E6%A1%A9%E6%8C%87%E4%BB%A4"><span class="toc-number">4.3.</span> <span class="toc-text">移除冗余的插桩指令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E5%8C%96%E6%88%90%E5%91%98%E6%A3%80%E6%B5%8B"><span class="toc-number">4.4.</span> <span class="toc-text">优化成员检测</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&text=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&is_video=false&description=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=【论文笔记】Securing-software-by-enforcing-data-flow-integrity&body=Check out this article: http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&title=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&name=【论文笔记】Securing-software-by-enforcing-data-flow-integrity&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/10/25/%E3%80%90%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0%E3%80%91Securing-software-by-enforcing-data-flow-integrity/&t=【论文笔记】Securing-software-by-enforcing-data-flow-integrity"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    CyanM0un
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="https://github.com/CyanM0un">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
